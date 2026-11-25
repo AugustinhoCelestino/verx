@@ -12,3 +12,8 @@ th, td { text-align: left; padding: 0.4rem; border-bottom: 1px solid #eee; }
 .neg { color: #b3261e; }
 .erro { color: #b3261e; }
 .aviso { color: #555; }
+.topo { display: flex; justify-content: space-between; align-items: center; }
+.sessao { display: flex; gap: 0.5rem; align-items: center; }
+.login { max-width: 360px; margin: 2rem auto; }
+.login form { flex-direction: column; align-items: stretch; }
+button.link { background: none; border: 0; color: #1a56db; cursor: pointer; padding: 0; text-decoration: underline; }

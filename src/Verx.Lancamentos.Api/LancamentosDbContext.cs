@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Verx.Lancamentos.Api;
@@ -7,6 +7,7 @@ public sealed class LancamentosDbContext(DbContextOptions<LancamentosDbContext> 
 {
     public DbSet<Lancamento> Lancamentos => Set<Lancamento>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -18,13 +19,23 @@ public sealed class LancamentosDbContext(DbContextOptions<LancamentosDbContext> 
             e.HasIndex(x => x.Data);
         });
 
+        b.Entity<Lancamento>().Property(x => x.UsuarioNome).HasMaxLength(100);
+
+        b.Entity<Usuario>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Nome).HasMaxLength(100);
+            e.Property(x => x.Email).HasMaxLength(200);
+            e.HasIndex(x => x.Email).IsUnique();
+        });
+
         b.Entity<OutboxMessage>(e =>
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.PublicadoEm);
         });
 
-        // SQLite nÃ£o ordena/compara DateTimeOffset nativamente.
+        // SQLite não ordena/compara DateTimeOffset nativamente.
         if (Database.IsSqlite())
             foreach (var p in b.Model.GetEntityTypes().SelectMany(t => t.GetProperties())
                          .Where(p => p.ClrType == typeof(DateTimeOffset) || p.ClrType == typeof(DateTimeOffset?)))

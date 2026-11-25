@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
@@ -26,7 +26,11 @@ if (!usaHttp)
 
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(o => o.TokenValidationParameters = jwt.ValidationParameters());
+    .AddJwtBearer(o =>
+    {
+        o.MapInboundClaims = false;
+        o.TokenValidationParameters = jwt.ValidationParameters();
+    });
 builder.Services.AddAuthorization();
 
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
@@ -38,7 +42,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Verx - Consolidado API", Version = "v1",
-        Description = "Em Development, obtenha um token em POST http://localhost:5101/dev/token (serviÃ§o de LanÃ§amentos) e informe-o em Authorize." });
+        Description = "Faça login em POST http://localhost:5101/auth/login (serviço de Lançamentos) e informe o access_token em Authorize." });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme { Type = SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT" });
     c.AddSecurityRequirement(doc => new() { [new OpenApiSecuritySchemeReference("Bearer", doc)] = [] });
 });
@@ -66,7 +70,7 @@ app.MapPrometheusScrapingEndpoint("/metrics");
 
 var api = app.MapGroup("/consolidado").RequireAuthorization();
 
-// Modo local (sem broker): recebe eventos do serviÃ§o de LanÃ§amentos por HTTP, protegido por chave interna.
+// Modo local (sem broker): recebe eventos do serviço de Lançamentos por HTTP, protegido por chave interna.
 if (usaHttp)
 {
     var chave = System.Text.Encoding.UTF8.GetBytes(app.Configuration["Messaging:Http:ApiKey"] ?? "dev-only-internal-key");

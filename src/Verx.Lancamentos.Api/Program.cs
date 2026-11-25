@@ -1,4 +1,5 @@
-﻿using System.Text;
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ builder.Services.AddDbContext<LancamentosDbContext>(o =>
 });
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<LancamentoService>();
+builder.Services.AddScoped<AuthService>();
 if (builder.Configuration["Messaging:Provider"] == "Http")
 {
     builder.Services.Configure<HttpTransportOptions>(builder.Configuration.GetSection("Messaging:Http"));
@@ -30,8 +32,13 @@ else
 builder.Services.AddHostedService<OutboxPublisher>();
 
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
+builder.Services.AddSingleton(jwt);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(o => o.TokenValidationParameters = jwt.ValidationParameters());
+    .AddJwtBearer(o =>
+    {
+        o.MapInboundClaims = false;
+        o.TokenValidationParameters = jwt.ValidationParameters();
+    });
 builder.Services.AddAuthorization();
 
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
@@ -42,8 +49,8 @@ builder.Services.AddHealthChecks().AddDbContextCheck<LancamentosDbContext>("sqls
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "Verx - LanÃ§amentos API", Version = "v1",
-        Description = "Em Development, obtenha um token em POST /dev/token e informe-o em Authorize." });
+    c.SwaggerDoc("v1", new() { Title = "Verx - Lançamentos API", Version = "v1",
+        Description = "Crie uma conta em POST /auth/registrar (ou use o usuário demo em Development), faça POST /auth/login e informe o access_token em Authorize." });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme { Type = SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT" });
     c.AddSecurityRequirement(doc => new() { [new OpenApiSecuritySchemeReference("Bearer", doc)] = [] });
 });
@@ -56,7 +63,12 @@ var app = builder.Build();
 app.UseExceptionHandler(e => e.Run(async ctx =>
 {
     var ex = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
-    var (status, title) = ex is DomainException de ? (400, de.Message) : (500, "Erro interno.");
+    var (status, title) = ex switch
+    {
+        DomainException de => (400, de.Message),
+        CredenciaisInvalidasException ci => (401, ci.Message),
+        _ => (500, "Erro interno.")
+    };
     ctx.Response.StatusCode = status;
     await ctx.Response.WriteAsJsonAsync(new ProblemDetails { Title = title, Status = status });
 }));
@@ -76,15 +88,31 @@ app.MapHealthChecks("/health/live", new() { Predicate = _ => false });
 app.MapHealthChecks("/health/ready");
 app.MapPrometheusScrapingEndpoint("/metrics");
 
-// Somente para demonstraÃ§Ã£o local. Em produÃ§Ã£o o token vem do IdP (ver docs/seguranca.md).
-if (app.Environment.IsDevelopment())
-    app.MapPost("/dev/token", () => Results.Ok(new { access_token = jwt.CreateDevToken() })).AllowAnonymous();
+// Usuário de demonstração para o ambiente local (nunca em produção).
+if (app.Environment.IsDevelopment() && app.Configuration.GetValue("Auth:SeedDemoUser", true)
+    && app.Configuration.GetValue("Database:AutoCreate", true))
+{
+    using var scope = app.Services.CreateScope();
+    var auth = scope.ServiceProvider.GetRequiredService<AuthService>();
+    try { await auth.RegistrarAsync(new("Comerciante Demo", "demo@verx.com", "Demo@12345"), default); }
+    catch (DomainException) { /* já existe */ }
+}
+
+var authApi = app.MapGroup("/auth");
+authApi.MapPost("/registrar", async (RegistrarUsuarioRequest req, AuthService svc, CancellationToken ct) =>
+    Results.Created("/auth/me", await svc.RegistrarAsync(req, ct))).AllowAnonymous();
+authApi.MapPost("/login", async (LoginRequest req, AuthService svc, CancellationToken ct) =>
+    Results.Ok(await svc.LoginAsync(req, ct))).AllowAnonymous();
+authApi.MapGet("/me", async (ClaimsPrincipal user, AuthService svc, CancellationToken ct) =>
+    user.Atual() is { } u && await svc.ObterAsync(u.Id, ct) is { } resp ? Results.Ok(resp) : Results.Unauthorized())
+    .RequireAuthorization();
 
 var api = app.MapGroup("/lancamentos").RequireAuthorization();
 
-api.MapPost("/", async (RegistrarLancamentoRequest req, LancamentoService svc, CancellationToken ct) =>
+api.MapPost("/", async (RegistrarLancamentoRequest req, ClaimsPrincipal user, LancamentoService svc, CancellationToken ct) =>
 {
-    var criado = await svc.RegistrarAsync(req, ct);
+    if (user.Atual() is not { } usuario) return Results.Unauthorized();
+    var criado = await svc.RegistrarAsync(req, usuario, ct);
     return Results.Created($"/lancamentos/{criado.Id}", criado);
 });
 

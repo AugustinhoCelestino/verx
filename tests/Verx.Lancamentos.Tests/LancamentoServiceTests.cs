@@ -25,14 +25,65 @@ public sealed class LancamentoServiceTests : IAsyncLifetime
         await _conn.DisposeAsync();
     }
 
+    private static readonly UsuarioAtual Usuario = new(Guid.NewGuid(), "Teste");
+
     private LancamentoService Service() => new(_db, new FixedClock(_now));
+
+    private AuthService Auth() => new(_db, new JwtSettings(), new FixedClock(_now));
+
+    [Fact]
+    public async Task Registrar_usuario_e_login_geram_token_com_identidade_do_usuario()
+    {
+        var reg = await Auth().RegistrarAsync(new("Ana", "Ana@Exemplo.com ", "senha-forte-1"), default);
+        var login = await Auth().LoginAsync(new("ana@exemplo.com", "senha-forte-1"), default);
+
+        Assert.Equal(reg.Usuario.Id, login.Usuario.Id);
+        var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(login.AccessToken);
+        Assert.Equal(login.Usuario.Id.ToString(), jwt.Subject);
+        Assert.Equal("Ana", jwt.Claims.First(c => c.Type == "name").Value);
+        Assert.DoesNotContain("senha", jwt.RawPayload, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Login_com_senha_errada_ou_email_inexistente_falha_igualmente()
+    {
+        await Auth().RegistrarAsync(new("Ana", "ana@exemplo.com", "senha-forte-1"), default);
+
+        await Assert.ThrowsAsync<CredenciaisInvalidasException>(() => Auth().LoginAsync(new("ana@exemplo.com", "errada"), default));
+        await Assert.ThrowsAsync<CredenciaisInvalidasException>(() => Auth().LoginAsync(new("outro@exemplo.com", "senha-forte-1"), default));
+    }
+
+    [Theory]
+    [InlineData("", "a@b.com", "senha-forte-1")]
+    [InlineData("Ana", "invalido", "senha-forte-1")]
+    [InlineData("Ana", "a@b.com", "curta")]
+    public async Task Registrar_usuario_valida_entrada(string nome, string email, string senha) =>
+        await Assert.ThrowsAsync<DomainException>(() => Auth().RegistrarAsync(new(nome, email, senha), default));
+
+    [Fact]
+    public async Task Registrar_usuario_rejeita_email_duplicado()
+    {
+        await Auth().RegistrarAsync(new("Ana", "ana@exemplo.com", "senha-forte-1"), default);
+        await Assert.ThrowsAsync<DomainException>(() => Auth().RegistrarAsync(new("Outra", "ANA@exemplo.com", "senha-forte-2"), default));
+    }
+
+    [Fact]
+    public void Hash_de_senha_usa_salt_e_verifica()
+    {
+        var h1 = PasswordHasher.Hash("abc12345");
+        Assert.NotEqual(h1, PasswordHasher.Hash("abc12345"));
+        Assert.True(PasswordHasher.Verify("abc12345", h1));
+        Assert.False(PasswordHasher.Verify("abc12346", h1));
+    }
 
     [Fact]
     public async Task Registrar_grava_lancamento_e_evento_no_outbox_juntos()
     {
-        var resp = await Service().RegistrarAsync(new(TipoLancamento.Credito, 150.50m, null, "venda"), default);
+        var resp = await Service().RegistrarAsync(new        (TipoLancamento.Credito, 150.50m, null, "venda"), Usuario, default);
 
         Assert.Equal(new DateOnly(2026, 11, 24), resp.Data);
+                Assert.Equal(Usuario.Id, resp.UsuarioId);
+                Assert.Equal(Usuario.Nome, resp.UsuarioNome);
         var msg = Assert.Single(_db.Outbox.ToList());
         Assert.Null(msg.PublicadoEm);
         var evento = JsonSerializer.Deserialize<LancamentoRegistrado>(msg.Payload)!;
@@ -48,7 +99,7 @@ public sealed class LancamentoServiceTests : IAsyncLifetime
     public async Task Registrar_rejeita_valor_invalido_e_nao_persiste_nada(double valor)
     {
         await Assert.ThrowsAsync<DomainException>(() =>
-            Service().RegistrarAsync(new(TipoLancamento.Debito, (decimal)valor, null, null), default));
+            Service().RegistrarAsync(new(TipoLancamento.Debito, (decimal)valor, null, null), Usuario, default));
 
         Assert.Empty(_db.Lancamentos);
         Assert.Empty(_db.Outbox);
@@ -58,15 +109,15 @@ public sealed class LancamentoServiceTests : IAsyncLifetime
     public async Task Registrar_rejeita_tipo_invalido()
     {
         await Assert.ThrowsAsync<DomainException>(() =>
-            Service().RegistrarAsync(new((TipoLancamento)99, 10m, null, null), default));
+            Service().RegistrarAsync(new((TipoLancamento)99, 10m, null, null), Usuario, default));
     }
 
     [Fact]
     public async Task Listar_retorna_apenas_lancamentos_da_data()
     {
         var svc = Service();
-        await svc.RegistrarAsync(new(TipoLancamento.Credito, 10m, new DateOnly(2026, 11, 1), null), default);
-        await svc.RegistrarAsync(new(TipoLancamento.Debito, 5m, new DateOnly(2026, 11, 2), null), default);
+        await svc.RegistrarAsync(new(TipoLancamento.Credito, 10m,         new DateOnly(2026, 11, 1), null), Usuario, default);
+                await svc.RegistrarAsync(new(TipoLancamento.Debito, 5m, new DateOnly(2026, 11, 2), null), Usuario, default);
 
         var lista = await svc.ListarAsync(new DateOnly(2026, 11, 1), default);
 

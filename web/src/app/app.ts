@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, Lancamento, SaldoDiario, Tipo } from './api.service';
@@ -9,7 +9,7 @@ import { ApiService, Lancamento, SaldoDiario, Tipo } from './api.service';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App implements OnInit {
+export class App {
   private readonly api = inject(ApiService);
 
   protected data = new Date().toISOString().slice(0, 10);
@@ -17,13 +17,48 @@ export class App implements OnInit {
   protected valor: number | null = null;
   protected descricao = '';
 
+  protected readonly usuario = this.api.usuario;
   protected readonly lancamentos = signal<Lancamento[]>([]);
   protected readonly saldo = signal<SaldoDiario | null>(null);
   protected readonly erro = signal('');
   protected readonly aviso = signal('');
 
-  ngOnInit() {
-    void this.atualizar();
+  protected modoCadastro = false;
+  protected nome = '';
+  protected email = '';
+  protected senha = '';
+  protected readonly erroLogin = signal('');
+
+  constructor() {
+    // Ao logar (ou restaurar a sessão) carrega os dados; ao sair, limpa a tela.
+    effect(() => {
+      if (this.usuario()) void this.atualizar();
+      else {
+        this.lancamentos.set([]);
+        this.saldo.set(null);
+        this.aviso.set('');
+      }
+    });
+  }
+
+  protected async entrar() {
+    this.erroLogin.set('');
+    try {
+      if (this.modoCadastro) await this.api.registrarUsuario(this.nome, this.email, this.senha);
+      else await this.api.login(this.email, this.senha);
+      this.senha = '';
+    } catch (e: any) {
+      this.erroLogin.set(e?.error?.title ?? 'Não foi possível conectar ao serviço de autenticação.');
+    }
+  }
+
+  protected sair() {
+    this.api.logout();
+  }
+
+  protected alternarModo() {
+    this.modoCadastro = !this.modoCadastro;
+    this.erroLogin.set('');
   }
 
   protected async registrar() {

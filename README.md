@@ -67,6 +67,12 @@ dotnet run --project src/Verx.Consolidado.Api   # http://localhost:5102
 cd web && npm install && npm start              # http://localhost:4200
 ```
 
+### Login e usuários
+
+A tela do Angular pede login (ou cadastro). Em Development já existe o usuário demo **`demo@verx.com` / `Demo@12345`**. O token JWT (`POST /auth/login`) identifica o usuário (`sub`, `name`, `email`) e cada lançamento guarda quem o registrou. Endpoints: `POST /auth/registrar`, `POST /auth/login`, `GET /auth/me`.
+
+> Ao atualizar de uma versão sem login, o `run\run.cmd` recria os bancos locais (`run\data`) uma única vez; com SQL Server existente, apague o banco para recriar o schema.
+
 ### Swagger
 
 Em Development (Opções A, B e C) cada API expõe o Swagger UI; a Opção A (`run\run.cmd`) já o abre no navegador:
@@ -74,13 +80,14 @@ Em Development (Opções A, B e C) cada API expõe o Swagger UI; a Opção A (`r
 - Lançamentos: http://localhost:5101/swagger
 - Consolidado: http://localhost:5102/swagger
 
-Para chamar endpoints protegidos: execute `POST /dev/token` no Swagger de Lançamentos, copie o token e informe-o em **Authorize** (Bearer) em qualquer um dos dois. No modo sem Docker os dados ficam em `run\data\*.db` (SQLite).
+Para chamar endpoints protegidos: execute `POST /auth/login` no Swagger de Lançamentos (usuário demo acima), copie o `access_token` e informe-o em **Authorize** (Bearer) em qualquer um dos dois. No modo sem Docker os dados ficam em `run\data\*.db` (SQLite).
 
 ### Testando pela API
 
 ```bash
-# token de desenvolvimento (somente em Development)
-curl -X POST http://localhost:5101/dev/token
+# login (usuário demo, somente em Development) -> access_token
+curl -X POST http://localhost:5101/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"demo@verx.com","senha":"Demo@12345"}'
 
 curl -X POST http://localhost:5101/lancamentos \
   -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \

@@ -15,7 +15,8 @@ public sealed class JwtSettings
         ValidIssuer = Issuer,
         ValidAudience = Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key)),
-        ValidateIssuerSigningKey = true
+        ValidateIssuerSigningKey = true,
+        NameClaimType = "name"
     };
 }
 

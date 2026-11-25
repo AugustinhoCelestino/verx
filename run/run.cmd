@@ -60,7 +60,12 @@ if not exist web\node_modules (
 )
 
 echo [5/5] Iniciando os servicos...
-if not exist run\data mkdir run\data
+rem O schema mudou (usuarios/login): bancos locais antigos sao descartados uma unica vez.
+if not exist run\data\schema-2 (
+  if exist run\data rmdir /s /q run\data
+  mkdir run\data
+  echo 2> run\data\schema-2
+)
 
 set ASPNETCORE_ENVIRONMENT=Development
 set Database__Provider=Sqlite

@@ -16,7 +16,13 @@
 | CORS | Origens explícitas (`Cors:Origins`) | **Implementado** |
 | Auditoria | Lançamentos imutáveis; `CriadoEm` e `EventId` rastreáveis | **Implementado** |
 
-O endpoint `/dev/token` só existe em `Development` e serve exclusivamente à demonstração local.
+O endpoint `/dev/token` foi substituído por login real (`POST /auth/login`). Detalhes da implementação atual:
+
+- Cadastro (`POST /auth/registrar`) e login (`POST /auth/login`) no serviço de Lançamentos; o token (JWT HS256, 8 h) leva `sub` (id do usuário), `name` e `email`.
+- Senhas com PBKDF2-SHA256 (210 mil iterações, salt por usuário, comparação em tempo constante); a resposta de login é idêntica para e-mail inexistente e senha errada.
+- Cada lançamento grava o `UsuarioId`/`UsuarioNome` de quem o registrou (vem do token, nunca do corpo da requisição).
+- Em `Development` é criado o usuário demo `demo@verx.com` / `Demo@12345` (`Auth:SeedDemoUser`).
+- Limitações conhecidas (alvo: IdP/OIDC): sem rate limiting/bloqueio por tentativas, sem refresh token/revogação, sem confirmação de e-mail e chave de assinatura simétrica compartilhada entre os serviços.
 
 ## 4.2 Monitoramento e observabilidade
 

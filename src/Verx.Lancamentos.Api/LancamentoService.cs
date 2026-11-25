@@ -6,18 +6,19 @@ namespace Verx.Lancamentos.Api;
 
 public sealed record RegistrarLancamentoRequest(TipoLancamento Tipo, decimal Valor, DateOnly? Data, string? Descricao);
 
-public sealed record LancamentoResponse(Guid Id, TipoLancamento Tipo, decimal Valor, DateOnly Data, string? Descricao, DateTimeOffset CriadoEm)
+public sealed record LancamentoResponse(Guid Id, TipoLancamento Tipo, decimal Valor, DateOnly Data, string? Descricao, DateTimeOffset CriadoEm, Guid UsuarioId, string UsuarioNome)
 {
-    public static LancamentoResponse From(Lancamento l) => new(l.Id, l.Tipo, l.Valor, l.Data, l.Descricao, l.CriadoEm);
+    public static LancamentoResponse From(Lancamento l) =>
+        new(l.Id, l.Tipo, l.Valor, l.Data, l.Descricao, l.CriadoEm, l.UsuarioId, l.UsuarioNome);
 }
 
 public sealed class LancamentoService(LancamentosDbContext db, TimeProvider clock)
 {
-    public async Task<LancamentoResponse> RegistrarAsync(RegistrarLancamentoRequest req, CancellationToken ct)
+    public async Task<LancamentoResponse>     RegistrarAsync(RegistrarLancamentoRequest req, UsuarioAtual usuario, CancellationToken ct)
     {
         var agora = clock.GetUtcNow();
         var data = req.Data ?? DateOnly.FromDateTime(agora.UtcDateTime);
-        var lancamento = Lancamento.Criar(req.Tipo, req.Valor, data, req.Descricao, agora);
+            var lancamento = Lancamento.Criar(req.Tipo, req.Valor, data, req.Descricao, usuario, agora);
 
         var evento = new LancamentoRegistrado(Guid.NewGuid(), lancamento.Id, lancamento.Tipo, lancamento.Valor, lancamento.Data, agora);
 

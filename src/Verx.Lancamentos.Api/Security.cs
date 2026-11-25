@@ -12,6 +12,8 @@ public sealed class JwtSettings
     public string Audience { get; set; } = "verx-api";
     public string Key { get; set; } = "dev-only-signing-key-change-me-32bytes!!";
 
+    public int ExpiresMinutes { get; set; } = 480;
+
     private SymmetricSecurityKey SecurityKey => new(Encoding.UTF8.GetBytes(Key));
 
     public TokenValidationParameters ValidationParameters() => new()
@@ -19,15 +21,18 @@ public sealed class JwtSettings
         ValidIssuer = Issuer,
         ValidAudience = Audience,
         IssuerSigningKey = SecurityKey,
-        ValidateIssuerSigningKey = true
+        ValidateIssuerSigningKey = true,
+        NameClaimType = "name"
     };
 
-    public string CreateDevToken()
+    public (string Token, int ExpiresInSeconds) CreateToken(Usuario usuario)
     {
-        var token = new JwtSecurityToken(Issuer, Audience, [new Claim("sub", "comerciante-demo")],
-            expires: DateTime.UtcNow.AddHours(8),
+        var expires = TimeSpan.FromMinutes(ExpiresMinutes);
+        var token = new JwtSecurityToken(Issuer, Audience,
+            [new Claim("sub", usuario.Id.ToString()), new Claim("name", usuario.Nome), new Claim("email", usuario.Email)],
+            expires: DateTime.UtcNow.Add(expires),
             signingCredentials: new SigningCredentials(SecurityKey, SecurityAlgorithms.HmacSha256));
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return (new JwtSecurityTokenHandler().WriteToken(token), (int)expires.TotalSeconds);
     }
 }
 
