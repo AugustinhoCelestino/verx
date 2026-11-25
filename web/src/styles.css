@@ -1,1 +1,18 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --azul: #254f9b;
+  --azul-escuro: #00387b;
+  --vermelho: #c20016;
+  --vermelho-escuro: #bb1e10;
+  --texto: #1d2433;
+  --texto-suave: #5b6578;
+  --borda: #dde2ea;
+  --superficie: #fff;
+}
+
+body {
+  margin: 0;
+  background: #f3f5f9;
+  color: var(--texto);
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

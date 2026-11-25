@@ -1,11 +1,13 @@
-<main>
-  <header class="topo">
+<header class="topo">
+  <div class="topo-in">
     <h1>Fluxo de Caixa</h1>
     @if (usuario(); as u) {
       <div class="sessao">Olá, <strong>{{ u.nome }}</strong> <button type="button" (click)="sair()">Sair</button></div>
     }
-  </header>
+  </div>
+</header>
 
+<main>
   @if (!usuario()) {
     <section class="card login">
       <h2>{{ modoCadastro ? 'Criar conta' : 'Entrar' }}</h2>
