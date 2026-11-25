@@ -45,6 +45,13 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .erro { color: var(--vermelho); background: #fdf0f1; border-left: 3px solid var(--vermelho); padding: 0.5rem 0.75rem; border-radius: 4px; margin: 0.75rem 0 0; font-size: 0.9rem; }
 .aviso { color: var(--texto-suave); font-size: 0.85rem; }
 
+.toast { position: fixed; right: 1.5rem; bottom: 1.5rem; max-width: 360px; display: flex; gap: 0.75rem; align-items: flex-start;
+  background: var(--azul-escuro); color: #fff; padding: 0.85rem 1rem; border-radius: 8px; border-left: 4px solid var(--vermelho);
+  box-shadow: 0 8px 24px rgba(0, 24, 64, 0.3); font-size: 0.9rem; animation: toast-in 0.25s ease-out; z-index: 10; }
+.toast button { background: transparent; color: #fff; border: 0; padding: 0 0.25rem; font-size: 1.2rem; line-height: 1; opacity: 0.8; }
+.toast button:hover { opacity: 1; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
 .login { max-width: 380px; margin: 3rem auto; border-top: 4px solid var(--azul); }
 .login h2 { font-size: 1.1rem; }
 .login form { flex-direction: column; align-items: stretch; }

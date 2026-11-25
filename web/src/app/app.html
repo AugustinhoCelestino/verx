@@ -46,7 +46,6 @@
       <button type="submit">Registrar</button>
     </form>
     @if (erro()) { <p class="erro">{{ erro() }}</p> }
-    @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
   </section>
 
   <section class="card">
@@ -84,3 +83,10 @@
   </section>
   }
 </main>
+
+@if (toast()) {
+  <div class="toast" role="status" aria-live="polite">
+    <span>{{ toast() }}</span>
+    <button type="button" aria-label="Fechar" (click)="fecharToast()">&times;</button>
+  </div>
+}

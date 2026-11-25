@@ -21,7 +21,8 @@ export class App {
   protected readonly lancamentos = signal<Lancamento[]>([]);
   protected readonly saldo = signal<SaldoDiario | null>(null);
   protected readonly erro = signal('');
-  protected readonly aviso = signal('');
+  protected readonly toast = signal('');
+  private toastTimer?: ReturnType<typeof setTimeout>;
 
   protected modoCadastro = false;
   protected nome = '';
@@ -36,7 +37,7 @@ export class App {
       else {
         this.lancamentos.set([]);
         this.saldo.set(null);
-        this.aviso.set('');
+        this.fecharToast();
       }
     });
   }
@@ -56,6 +57,17 @@ export class App {
     this.api.logout();
   }
 
+  private mostrarToast(mensagem: string) {
+    clearTimeout(this.toastTimer);
+    this.toast.set(mensagem);
+    this.toastTimer = setTimeout(() => this.toast.set(''), 5000);
+  }
+
+  protected fecharToast() {
+    clearTimeout(this.toastTimer);
+    this.toast.set('');
+  }
+
   protected alternarModo() {
     this.modoCadastro = !this.modoCadastro;
     this.erroLogin.set('');
@@ -72,7 +84,7 @@ export class App {
       await this.api.registrar(this.tipo, this.valor, this.data, this.descricao);
       this.valor = null;
       this.descricao = '';
-      this.aviso.set('Lançamento registrado. O consolidado é atualizado de forma assíncrona.');
+      this.mostrarToast('Lançamento registrado. O consolidado é atualizado de forma assíncrona.');
       await this.atualizar();
       void this.aguardarConsolidado(antes);
     } catch (e: any) {
