@@ -27,7 +27,8 @@ O endpoint `/dev/token` foi substituído por login real (`POST /auth/login`). De
 ## 4.2 Monitoramento e observabilidade
 
 **Implementado**
-- `GET /health/live` (processo) e `GET /health/ready` (inclui banco) em ambos os serviços → probes de orquestrador.
+- `GET /health/live` (processo) e `GET /health/ready` (inclui banco) em ambos os serviços → probes de orquestrador. Agora são controllers (aparecem no Swagger) e `ready` devolve o detalhe de cada verificação, com 503 se alguma falhar.
+- `GET /logs?nivel=Warning&busca=texto&limite=100` (autenticado) em ambos os serviços: últimos 1000 logs **em memória**, mais recentes primeiro. É uma consulta de apoio na PoC; em produção os logs vão para um agregador (ELK, Loki, Application Insights).
 - `GET /metrics` (Prometheus via OpenTelemetry: taxa, latência e erros HTTP).
 - `docker-compose` com Prometheus em `http://localhost:9090`.
 - Logs estruturados do ASP.NET Core; erros do consumer incluem delivery tag e flag de reentrega.
@@ -38,8 +39,8 @@ O endpoint `/dev/token` foi substituído por login real (`POST /auth/login`). De
 | Disponibilidade `POST /lancamentos` | 99,9% (independente do Consolidado) |
 | Sucesso `GET /consolidado` em pico | ≥ 95% (requisito) – meta interna 99% |
 | Latência p95 `GET /consolidado` | < 500 ms |
-| Atraso de consolidação (publicação → saldo atualizado) | p95 < 10 s |
+| Atraso do consolidado (publicação → saldo atualizado) | p95 < 10 s |
 
 **Alertas recomendados:** profundidade da fila `consolidado.lancamento-registrado` crescente; mensagens na DLQ > 0; mensagens do outbox pendentes há > 1 min; taxa 5xx > 1%; readiness falhando.
 
-**Evolução:** traces distribuídos (OpenTelemetry + `traceparent` nas mensagens), dashboards Grafana, métricas de negócio (lançamentos/min, atraso de consolidação), logs centralizados.
+**Evolução:** traces distribuídos (OpenTelemetry + `traceparent` nas mensagens), dashboards Grafana, métricas de negócio (lançamentos/min, atraso do consolidado), logs centralizados.

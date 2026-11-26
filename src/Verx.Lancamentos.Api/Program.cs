@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using OpenTelemetry.Metrics;
+using Verx.Observability;
 using Verx.Contracts;
 using Verx.Lancamentos.Api.Application;
 using Verx.Lancamentos.Api.Domain;
@@ -55,8 +56,9 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
     .WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:4200"])
     .AllowAnyHeader().AllowAnyMethod()));
 
-builder.Services.AddHealthChecks().AddDbContextCheck<LancamentosDbContext>("sqlserver");
+builder.Services.AddHealthChecks().AddDbContextCheck<LancamentosDbContext>("database");
 builder.Services.AddControllers();
+builder.Services.AddObservability();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -95,8 +97,6 @@ app.UseAuthorization();
 if (app.Configuration.GetValue("Database:AutoCreate", true))
     await DatabaseInitializer.EnsureCreatedAsync(app.Services);
 
-app.MapHealthChecks("/health/live", new() { Predicate = _ => false });
-app.MapHealthChecks("/health/ready");
 app.MapPrometheusScrapingEndpoint("/metrics");
 
 // Usuário de demonstração para o ambiente local (nunca em produção).

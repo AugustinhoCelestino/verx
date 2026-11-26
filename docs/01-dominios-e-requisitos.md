@@ -8,11 +8,11 @@ O comerciante controla o fluxo de caixa diário (créditos e débitos) e precisa
 | Domínio | Tipo | Capacidades de negócio | Serviço |
 |---|---|---|---|
 | **Lançamentos (Fluxo de Caixa)** | Core | Registrar crédito/débito; consultar lançamentos por dia; garantir integridade do registro | `Verx.Lancamentos.Api` |
-| **Consolidação** | Core / Suporte | Apurar saldo diário (créditos − débitos); disponibilizar consulta de saldo por dia/período; tolerar reprocessamento | `Verx.Consolidado.Api` |
-| **Identidade e Acesso** | Genérico | Autenticar comerciante; autorizar consumo das APIs | IdP externo (OIDC) – simulado por JWT local |
+| **Consolidado** | Core / Suporte | Apurar saldo diário (créditos − débitos); disponibilizar consulta de saldo por dia/período; tolerar reprocessamento | `Verx.Consolidado.Api` |
+| **Login e Acesso** | Genérico | Cadastro e login do comerciante; gerar o token JWT que identifica o usuário logado; autorizar consumo das APIs | IdP externo (OIDC) – simulado por login com JWT local (`/auth`, no `Verx.Lancamentos.Api`) |
 | **Plataforma / Observabilidade** | Genérico | Health, métricas, logs, alertas | Prometheus (+ Grafana/OTel em produção) |
 
-**Contextos delimitados (bounded contexts):** Lançamentos e Consolidação são contextos distintos, com bancos distintos. A única integração é o evento `LancamentoRegistrado` (contrato em `Verx.Contracts`), sem acoplamento de banco ou chamada síncrona.
+**Contextos delimitados (bounded contexts):** Lançamentos e Consolidado são contextos distintos, com bancos distintos. A única integração é o evento `LancamentoRegistrado` (contrato em `Verx.Contracts`), sem acoplamento de banco ou chamada síncrona.
 
 ## 1.3 Requisitos funcionais
 

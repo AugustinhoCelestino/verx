@@ -14,10 +14,13 @@ namespace Verx.Consolidado.Api.Controllers;
 public sealed class ConsolidadoController(ConsolidadoService svc) : ControllerBase
 {
     [HttpGet("{data}")]
+    [ProducesResponseType<SaldoDiarioResponse>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Obter(DateOnly data, CancellationToken ct) =>
         Ok(await svc.ObterAsync(data, ct));
 
     [HttpGet]
+    [ProducesResponseType<IReadOnlyList<SaldoDiarioResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ListarPeriodo([BindRequired, FromQuery] DateOnly de, [BindRequired, FromQuery] DateOnly ate, CancellationToken ct) =>
         de > ate
             ? BadRequest(new ProblemDetails { Title = "'de' deve ser anterior ou igual a 'ate'.", Status = 400 })
@@ -32,6 +35,7 @@ public sealed class ConsolidadoController(ConsolidadoService svc) : ControllerBa
 public sealed class EventosInternosController(ConsolidadoService svc, IConfiguration config) : ControllerBase
 {
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> Receber(LancamentoRegistrado evento, CancellationToken ct)
     {
         if (config["Messaging:Provider"] != "Http") return NotFound();

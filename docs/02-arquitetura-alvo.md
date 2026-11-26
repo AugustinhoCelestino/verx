@@ -32,7 +32,7 @@ flowchart LR
       EX --> Q
       Q -. falhas .-> DLQ
     end
-    subgraph Consolidacao[Domínio Consolidação]
+    subgraph Consolidacao[Domínio Consolidado]
       CO[LancamentoConsumer<br/>BackgroundService]
       CA[Consolidado.Api<br/>ASP.NET Core]
       CDB[(SQL Server<br/>Saldo diário + Eventos processados)]

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using OpenTelemetry.Metrics;
+using Verx.Observability;
 using Verx.Consolidado.Api.Application;
 using Verx.Consolidado.Api.Domain;
 using Verx.Consolidado.Api.Infrastructure.Caching;
@@ -46,8 +47,9 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
     .WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:4200"])
     .AllowAnyHeader().AllowAnyMethod()));
 
-builder.Services.AddHealthChecks().AddDbContextCheck<ConsolidadoDbContext>("sqlserver");
+builder.Services.AddHealthChecks().AddDbContextCheck<ConsolidadoDbContext>("database");
 builder.Services.AddControllers();
+builder.Services.AddObservability();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -74,8 +76,6 @@ app.UseAuthorization();
 if (app.Configuration.GetValue("Database:AutoCreate", true))
     await DatabaseInitializer.EnsureCreatedAsync(app.Services);
 
-app.MapHealthChecks("/health/live", new() { Predicate = _ => false });
-app.MapHealthChecks("/health/ready");
 app.MapPrometheusScrapingEndpoint("/metrics");
 
 app.MapControllers();

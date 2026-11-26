@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Verx.Contracts\Verx.Contracts.csproj" />
+    <ProjectReference Include="..\Verx.Observability\Verx.Observability.csproj" />
   </ItemGroup>
 
   <ItemGroup>

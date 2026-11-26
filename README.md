@@ -116,6 +116,7 @@ Cobertura dos testes: regras de validação do lançamento, gravação atômica 
 ## Estrutura
 
 ```
+src/Verx.Observability      health (/health/*), consulta de logs (/logs) e buffer de logs, compartilhados pelas APIs
 src/Verx.Contracts          evento de integração LancamentoRegistrado + topologia RabbitMQ
 src/Verx.Lancamentos.Api    contexto Lançamentos, em camadas DDD (veja abaixo)
 src/Verx.Consolidado.Api    contexto Consolidado, em camadas DDD (veja abaixo)

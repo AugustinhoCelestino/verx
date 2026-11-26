@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Verx.Consolidado.Tests", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Verx.Lancamentos.Tests", "tests\Verx.Lancamentos.Tests\Verx.Lancamentos.Tests.csproj", "{BCFECBBA-847A-4FDE-A8C1-D96ADEAE9519}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Verx.Observability", "src\Verx.Observability\Verx.Observability.csproj", "{0B9AF362-546E-4026-9055-785A4C944FB2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,18 @@ Global
 		{BCFECBBA-847A-4FDE-A8C1-D96ADEAE9519}.Release|x64.Build.0 = Release|Any CPU
 		{BCFECBBA-847A-4FDE-A8C1-D96ADEAE9519}.Release|x86.ActiveCfg = Release|Any CPU
 		{BCFECBBA-847A-4FDE-A8C1-D96ADEAE9519}.Release|x86.Build.0 = Release|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Debug|x64.Build.0 = Debug|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Debug|x86.Build.0 = Debug|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Release|x64.ActiveCfg = Release|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Release|x64.Build.0 = Release|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Release|x86.ActiveCfg = Release|Any CPU
+		{0B9AF362-546E-4026-9055-785A4C944FB2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,5 +111,6 @@ Global
 		{3FE63E1B-CCC1-4CA6-BEFB-1390EBD77512} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{106FA8E5-6CCE-4121-BEEC-5EEE21FDF87A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{BCFECBBA-847A-4FDE-A8C1-D96ADEAE9519} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{0B9AF362-546E-4026-9055-785A4C944FB2} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
