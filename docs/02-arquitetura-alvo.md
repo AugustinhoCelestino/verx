@@ -67,9 +67,9 @@ sequenceDiagram
       O->>B: publish (persistente, confirm)
       O->>DB: marca publicado
     end
-    B->>C: entrega (ack manual)
+    B->>C: entrega (confirmação manual)
     C->>CDB: evento já processado? se não, atualiza saldo + registra EventId (1 transação)
-    C-->>B: ack
+    C-->>B: confirma processamento
 ```
 
 O `201` não depende do broker nem do Consolidado: se qualquer um estiver fora, o evento permanece no outbox/na fila e é aplicado quando o componente voltar.
@@ -84,7 +84,7 @@ O `201` não depende do broker nem do Consolidado: se qualquer um estiver fora, 
 |---|---|---|
 | Consolidado (API ou consumer) fora | Nenhum | Fila durável acumula; ao voltar, consome o backlog |
 | RabbitMQ fora | Nenhum (grava no banco); publisher reconecta | Outbox entrega depois (at-least-once) |
-| BD do Consolidado fora | Nenhum | Consumer faz *nack* → retentativa → DLQ; reprocessável |
+| BD do Consolidado fora | Nenhum | Consumer rejeita a mensagem → retentativa → DLQ; reprocessável |
 
 **50 req/s com ≤ 5% de perda (RNF02).** 50 req/s sobre uma leitura por PK é carga baixa para uma instância; com cache, a maioria das requisições nem toca o banco. Para folga: ≥ 2 réplicas atrás de balanceador, *readiness probe* e *autoscaling* por CPU/RPS. Validação: `tests/load/consolidado.js` (k6) com limiar `http_req_failed < 5%`.
 
