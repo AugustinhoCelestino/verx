@@ -116,14 +116,27 @@ Cobertura dos testes: regras de validação do lançamento, gravação atômica 
 ## Estrutura
 
 ```
-src/Verx.Contracts          evento LancamentoRegistrado + topologia RabbitMQ
-src/Verx.Lancamentos.Api    API, domínio, outbox e publisher
-src/Verx.Consolidado.Api    API, consumer, saldo diário e cache
+src/Verx.Contracts          evento de integração LancamentoRegistrado + topologia RabbitMQ
+src/Verx.Lancamentos.Api    contexto Lançamentos, em camadas DDD (veja abaixo)
+src/Verx.Consolidado.Api    contexto Consolidado, em camadas DDD (veja abaixo)
 tests/                      testes xUnit e script k6
 web/                        SPA Angular
 docs/                       arquitetura, requisitos, ADRs
 ops/                        configuração do Prometheus
 ```
+
+### Camadas (DDD)
+
+Cada API é um *bounded context* com as mesmas camadas, em pastas/namespaces, e as dependências apontam sempre para dentro (`Api → Application → Domain`; `Infrastructure` implementa as portas):
+
+| Camada | Lançamentos | Consolidado |
+|---|---|---|
+| **Domain** (sem EF/ASP.NET) | agregados `Lancamento` e `Usuario`, value objects `Dinheiro` e `Email`, evento de domínio `LancamentoRegistradoEvent`, portas de repositório | agregado `SaldoDiario`, `EventoProcessado`, portas de repositório |
+| **Application** | casos de uso `LancamentoService` e `AuthService`, DTOs, portas (`IUnitOfWork`, `IOutbox`, `ITokenService`) | caso de uso `ConsolidadoService` (idempotência, concorrência otimista), portas (`IUnitOfWork`, `ISaldoCache`) |
+| **Infrastructure** | EF Core (repositórios, outbox), publisher e transportes RabbitMQ/HTTP, JWT, PBKDF2 | EF Core, consumer RabbitMQ, cache em memória, JWT |
+| **Endpoints / Program** | rotas `/auth` e `/lancamentos`, composição | rotas `/consolidado`, `/internal/eventos`, composição |
+
+O evento de domínio fica dentro do contexto; só o evento de integração `LancamentoRegistrado` (em `Verx.Contracts`) cruza a fronteira entre os serviços. Os bancos e os contratos HTTP/JSON não mudaram.
 
 ## Limitações conhecidas e evoluções
 

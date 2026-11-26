@@ -6,7 +6,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using OpenTelemetry.Metrics;
 using Verx.Contracts;
-using Verx.Lancamentos.Api;
+using Verx.Lancamentos.Api.Application;
+using Verx.Lancamentos.Api.Domain;
+using Verx.Lancamentos.Api.Endpoints;
+using Verx.Lancamentos.Api.Infrastructure.Messaging;
+using Verx.Lancamentos.Api.Infrastructure.Persistence;
+using Verx.Lancamentos.Api.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +21,12 @@ builder.Services.AddDbContext<LancamentosDbContext>(o =>
     if (builder.Configuration["Database:Provider"] == "Sqlite") o.UseSqlite(cs); else o.UseSqlServer(cs);
 });
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ILancamentoRepository, LancamentoRepository>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IOutbox, OutboxWriter>();
+builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+builder.Services.AddSingleton<ISenhaHasher, Pbkdf2SenhaHasher>();
+builder.Services.AddSingleton<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<LancamentoService>();
 builder.Services.AddScoped<AuthService>();
 if (builder.Configuration["Messaging:Provider"] == "Http")
@@ -98,26 +109,8 @@ if (app.Environment.IsDevelopment() && app.Configuration.GetValue("Auth:SeedDemo
     catch (DomainException) { /* já existe */ }
 }
 
-var authApi = app.MapGroup("/auth");
-authApi.MapPost("/registrar", async (RegistrarUsuarioRequest req, AuthService svc, CancellationToken ct) =>
-    Results.Created("/auth/me", await svc.RegistrarAsync(req, ct))).AllowAnonymous();
-authApi.MapPost("/login", async (LoginRequest req, AuthService svc, CancellationToken ct) =>
-    Results.Ok(await svc.LoginAsync(req, ct))).AllowAnonymous();
-authApi.MapGet("/me", async (ClaimsPrincipal user, AuthService svc, CancellationToken ct) =>
-    user.Atual() is { } u && await svc.ObterAsync(u.Id, ct) is { } resp ? Results.Ok(resp) : Results.Unauthorized())
-    .RequireAuthorization();
-
-var api = app.MapGroup("/lancamentos").RequireAuthorization();
-
-api.MapPost("/", async (RegistrarLancamentoRequest req, ClaimsPrincipal user, LancamentoService svc, CancellationToken ct) =>
-{
-    if (user.Atual() is not { } usuario) return Results.Unauthorized();
-    var criado = await svc.RegistrarAsync(req, usuario, ct);
-    return Results.Created($"/lancamentos/{criado.Id}", criado);
-});
-
-api.MapGet("/", async ([FromQuery] DateOnly? data, LancamentoService svc, TimeProvider clock, CancellationToken ct) =>
-    Results.Ok(await svc.ListarAsync(data ?? DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime), ct)));
+app.MapAuth();
+app.MapLancamentos();
 
 app.Run();
 

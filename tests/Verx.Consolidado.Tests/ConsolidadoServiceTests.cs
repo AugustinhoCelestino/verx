@@ -1,7 +1,10 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Verx.Consolidado.Api;
+using Verx.Consolidado.Api.Application;
+using Verx.Consolidado.Api.Domain;
+using Verx.Consolidado.Api.Infrastructure.Caching;
+using Verx.Consolidado.Api.Infrastructure.Persistence;
 using Verx.Contracts;
 
 namespace Verx.Consolidado.Tests;
@@ -30,8 +33,20 @@ public sealed class ConsolidadoServiceTests : IAsyncLifetime
     private ConsolidadoDbContext NewContext() =>
         new(new DbContextOptionsBuilder<ConsolidadoDbContext>().UseSqlite(_conn).Options);
 
-    private ConsolidadoService Service(ConsolidadoDbContext? db = null) =>
-        new(db ?? _db, _cache, TimeProvider.System, new ConsolidadoOptions { TtlSeconds = 60 });
+    private ConsolidadoService Service(ConsolidadoDbContext? db = null)
+    {
+        db ??= _db;
+        return new(new SaldoDiarioRepository(db), new EventoProcessadoRepository(db), new EfUnitOfWork(db),
+            new MemorySaldoCache(_cache, new ConsolidadoOptions { TtlSeconds = 60 }), TimeProvider.System);
+    }
+
+    [Fact]
+    public void Saldo_rejeita_movimento_invalido()
+    {
+        var s = new SaldoDiario(Dia);
+        Assert.Throws<DomainException>(() => s.Aplicar(TipoMovimento.Credito, 0m, DateTimeOffset.UtcNow));
+        Assert.Equal(0, s.QuantidadeLancamentos);
+    }
 
     private static LancamentoRegistrado Evento(TipoLancamento tipo, decimal valor, Guid? id = null) =>
         new(id ?? Guid.NewGuid(), Guid.NewGuid(), tipo, valor, Dia, DateTimeOffset.UtcNow);

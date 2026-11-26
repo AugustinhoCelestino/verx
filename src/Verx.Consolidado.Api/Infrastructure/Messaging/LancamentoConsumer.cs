@@ -2,9 +2,10 @@ using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Verx.Consolidado.Api.Application;
 using Verx.Contracts;
 
-namespace Verx.Consolidado.Api;
+namespace Verx.Consolidado.Api.Infrastructure.Messaging;
 
 /// <summary>Consome LancamentoRegistrado. Falhas persistentes vão para a DLQ; o broker guarda o backlog se este serviço cair.</summary>
 public sealed class LancamentoConsumer(

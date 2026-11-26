@@ -3,7 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using OpenTelemetry.Metrics;
-using Verx.Consolidado.Api;
+using Verx.Consolidado.Api.Application;
+using Verx.Consolidado.Api.Domain;
+using Verx.Consolidado.Api.Endpoints;
+using Verx.Consolidado.Api.Infrastructure.Caching;
+using Verx.Consolidado.Api.Infrastructure.Messaging;
+using Verx.Consolidado.Api.Infrastructure.Persistence;
+using Verx.Consolidado.Api.Infrastructure.Security;
 using Verx.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +22,10 @@ builder.Services.AddDbContext<ConsolidadoDbContext>(o =>
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(builder.Configuration.GetSection("Cache").Get<ConsolidadoOptions>() ?? new ConsolidadoOptions());
+builder.Services.AddScoped<ISaldoDiarioRepository, SaldoDiarioRepository>();
+builder.Services.AddScoped<IEventoProcessadoRepository, EventoProcessadoRepository>();
+builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+builder.Services.AddSingleton<ISaldoCache, MemorySaldoCache>();
 builder.Services.AddScoped<ConsolidadoService>();
 var usaHttp = builder.Configuration["Messaging:Provider"] == "Http";
 if (!usaHttp)
@@ -68,29 +78,8 @@ app.MapHealthChecks("/health/live", new() { Predicate = _ => false });
 app.MapHealthChecks("/health/ready");
 app.MapPrometheusScrapingEndpoint("/metrics");
 
-var api = app.MapGroup("/consolidado").RequireAuthorization();
-
-// Modo local (sem broker): recebe eventos do serviço de Lançamentos por HTTP, protegido por chave interna.
-if (usaHttp)
-{
-    var chave = System.Text.Encoding.UTF8.GetBytes(app.Configuration["Messaging:Http:ApiKey"] ?? "dev-only-internal-key");
-    app.MapPost("/internal/eventos", async (HttpContext ctx, LancamentoRegistrado evento, ConsolidadoService svc, CancellationToken ct) =>
-    {
-        var recebida = System.Text.Encoding.UTF8.GetBytes(ctx.Request.Headers["X-Api-Key"].ToString());
-        if (!System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(recebida, chave))
-            return Results.Unauthorized();
-        await svc.ProcessarAsync(evento, ct);
-        return Results.Accepted();
-    }).AllowAnonymous();
-}
-
-api.MapGet("/{data}", async (DateOnly data, ConsolidadoService svc, CancellationToken ct) =>
-    Results.Ok(await svc.ObterAsync(data, ct)));
-
-api.MapGet("/", async ([FromQuery] DateOnly de, [FromQuery] DateOnly ate, ConsolidadoService svc, CancellationToken ct) =>
-    de > ate
-        ? Results.BadRequest(new ProblemDetails { Title = "'de' deve ser anterior ou igual a 'ate'.", Status = 400 })
-        : Results.Ok(await svc.ListarPeriodoAsync(de, ate, ct)));
+if (usaHttp) app.MapEventosInternos();
+app.MapConsolidado();
 
 app.Run();
 

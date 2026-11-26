@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Verx.Consolidado.Api.Domain;
 
-namespace Verx.Consolidado.Api;
+namespace Verx.Consolidado.Api.Infrastructure.Persistence;
 
 public sealed class ConsolidadoDbContext(DbContextOptions<ConsolidadoDbContext> options) : DbContext(options)
 {

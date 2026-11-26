@@ -1,8 +1,12 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Verx.Contracts;
-using Verx.Lancamentos.Api;
+using Verx.Lancamentos.Api.Application;
+using Verx.Lancamentos.Api.Domain;
+using Verx.Lancamentos.Api.Infrastructure.Persistence;
+using Verx.Lancamentos.Api.Infrastructure.Security;
+using TipoLancamento = Verx.Lancamentos.Api.Domain.TipoLancamento;
 
 namespace Verx.Lancamentos.Tests;
 
@@ -27,9 +31,11 @@ public sealed class LancamentoServiceTests : IAsyncLifetime
 
     private static readonly UsuarioAtual Usuario = new(Guid.NewGuid(), "Teste");
 
-    private LancamentoService Service() => new(_db, new FixedClock(_now));
+    private LancamentoService Service() => new(new LancamentoRepository(_db), new OutboxWriter(_db), new EfUnitOfWork(_db), new FixedClock(_now));
 
-    private AuthService Auth() => new(_db, new JwtSettings(), new FixedClock(_now));
+    private AuthService Auth() => new(new UsuarioRepository(_db), Hasher, new JwtTokenService(new JwtSettings()), new EfUnitOfWork(_db), new FixedClock(_now));
+
+    private static readonly Pbkdf2SenhaHasher Hasher = new();
 
     [Fact]
     public async Task Registrar_usuario_e_login_geram_token_com_identidade_do_usuario()
@@ -70,10 +76,10 @@ public sealed class LancamentoServiceTests : IAsyncLifetime
     [Fact]
     public void Hash_de_senha_usa_salt_e_verifica()
     {
-        var h1 = PasswordHasher.Hash("abc12345");
-        Assert.NotEqual(h1, PasswordHasher.Hash("abc12345"));
-        Assert.True(PasswordHasher.Verify("abc12345", h1));
-        Assert.False(PasswordHasher.Verify("abc12346", h1));
+        var h1 = Hasher.Gerar("abc12345");
+        Assert.NotEqual(h1, Hasher.Gerar("abc12345"));
+        Assert.True(Hasher.Verificar("abc12345", h1));
+        Assert.False(Hasher.Verificar("abc12346", h1));
     }
 
     [Fact]
@@ -89,7 +95,7 @@ public sealed class LancamentoServiceTests : IAsyncLifetime
         var evento = JsonSerializer.Deserialize<LancamentoRegistrado>(msg.Payload)!;
         Assert.Equal(resp.Id, evento.LancamentoId);
         Assert.Equal(150.50m, evento.Valor);
-        Assert.Equal(TipoLancamento.Credito, evento.Tipo);
+        Assert.Equal(Verx.Contracts.TipoLancamento.Credito, evento.Tipo);
     }
 
     [Theory]
@@ -124,6 +130,25 @@ public sealed class LancamentoServiceTests : IAsyncLifetime
         Assert.Single(lista);
         Assert.Equal(10m, lista[0].Valor);
     }
+
+    [Fact]
+    public void Lancamento_registrado_emite_evento_de_dominio()
+    {
+        var l = Lancamento.Registrar(TipoLancamento.Debito, 10m, new DateOnly(2026, 11, 24), null, Guid.NewGuid(), "Ana", _now);
+
+        var e = Assert.IsType<LancamentoRegistradoEvent>(Assert.Single(l.EventosDeDominio));
+        Assert.Equal(l.Id, e.LancamentoId);
+        Assert.Equal(Dinheiro.De(10m), e.Valor);
+    }
+
+    [Theory]
+    [InlineData(" Ana@Exemplo.COM ", "ana@exemplo.com")]
+    public void Email_e_normalizado(string entrada, string esperado) =>
+        Assert.Equal(esperado, Email.Criar(entrada).Valor);
+
+    [Fact]
+    public void Email_invalido_e_rejeitado() =>
+        Assert.Throws<DomainException>(() => Email.Criar("nao-e-email"));
 
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider
     {

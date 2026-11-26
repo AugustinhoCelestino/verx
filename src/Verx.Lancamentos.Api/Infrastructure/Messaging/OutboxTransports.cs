@@ -3,7 +3,9 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using Verx.Contracts;
 
-namespace Verx.Lancamentos.Api;
+using Verx.Lancamentos.Api.Infrastructure.Persistence;
+
+namespace Verx.Lancamentos.Api.Infrastructure.Messaging;
 
 /// <summary>Canal de saída do outbox. Implementações: RabbitMQ (padrão) ou HTTP (modo local sem broker).</summary>
 public interface IOutboxTransport : IAsyncDisposable

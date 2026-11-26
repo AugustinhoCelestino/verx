@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Verx.Lancamentos.Api;
+using Verx.Lancamentos.Api.Infrastructure.Persistence;
+
+namespace Verx.Lancamentos.Api.Infrastructure.Messaging;
 
 /// <summary>
 /// Publica as mensagens pendentes do outbox. Se o destino estiver indisponível,
