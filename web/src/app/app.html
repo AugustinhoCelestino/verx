@@ -5,6 +5,12 @@
       <div class="sessao">Olá, <strong>{{ u.nome }}</strong> <button type="button" (click)="sair()">Sair</button></div>
     }
   </div>
+  @if (usuario()) {
+    <nav class="menu" aria-label="Menu principal">
+      <button type="button" [class.ativo]="aba() === 'lancamentos'" (click)="abrir('lancamentos')">Lançamentos</button>
+      <button type="button" [class.ativo]="aba() === 'logs'" (click)="abrir('logs')">Logs</button>
+    </nav>
+  }
 </header>
 
 <main>
@@ -30,6 +36,48 @@
       </p>
       <p class="aviso">Demo local: demo&#64;verx.com / Demo&#64;12345</p>
     </section>
+  } @else if (aba() === 'logs') {
+  <section class="card">
+    <h2>Logs <button type="button" (click)="consultarLogs()">Consultar</button></h2>
+    <form (ngSubmit)="consultarLogs()">
+      <label>Serviço
+        <select name="servicoLog" [(ngModel)]="servicoLog">
+          <option value="lancamentos">Lançamentos</option>
+          <option value="consolidado">Consolidado</option>
+        </select>
+      </label>
+      <label>Nível mínimo
+        <select name="nivelLog" [(ngModel)]="nivelLog">
+          @for (n of niveis; track n) { <option [value]="n">{{ n }}</option> }
+        </select>
+      </label>
+      <label>Busca <input type="text" name="buscaLog" maxlength="100" [(ngModel)]="buscaLog" /></label>
+      <label>Limite
+        <select name="limiteLog" [(ngModel)]="limiteLog">
+          <option [ngValue]="50">50</option>
+          <option [ngValue]="100">100</option>
+          <option [ngValue]="500">500</option>
+        </select>
+      </label>
+      <button type="submit">Filtrar</button>
+    </form>
+    @if (erroLogs()) { <p class="erro">{{ erroLogs() }}</p> }
+    <table class="logs">
+      <thead><tr><th>Data/hora</th><th>Nível</th><th>Categoria</th><th>Mensagem</th></tr></thead>
+      <tbody>
+        @for (l of logs(); track $index) {
+          <tr>
+            <td>{{ l.timestamp | date: 'dd/MM HH:mm:ss' }}</td>
+            <td><span class="nivel" [class]="'nivel ' + l.nivel">{{ l.nivel }}</span></td>
+            <td>{{ l.categoria }}</td>
+            <td>{{ l.mensagem }}@if (l.excecao) { <pre>{{ l.excecao }}</pre> }</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4">Nenhum log encontrado.</td></tr>
+        }
+      </tbody>
+    </table>
+  </section>
   } @else {
   <section class="card">
     <h2>Novo lançamento</h2>

@@ -23,6 +23,17 @@ export interface SaldoDiario {
   atualizadoEm: string | null;
 }
 
+export type Servico = 'lancamentos' | 'consolidado';
+export type NivelLog = 'Trace' | 'Debug' | 'Information' | 'Warning' | 'Error' | 'Critical';
+
+export interface LogEntry {
+  timestamp: string;
+  nivel: NivelLog;
+  categoria: string;
+  mensagem: string;
+  excecao?: string | null;
+}
+
 export interface Usuario {
   id: string;
   nome: string;
@@ -115,6 +126,13 @@ export class ApiService {
     return this.chamar(
       firstValueFrom(this.http.get<Lancamento[]>(`${LANCAMENTOS_URL}/lancamentos`, { params: { data }, headers: this.headers() })),
     );
+  }
+
+  logs(servico: Servico, nivel: NivelLog, busca: string, limite: number) {
+    const base = servico === 'lancamentos' ? LANCAMENTOS_URL : CONSOLIDADO_URL;
+    const params: Record<string, string> = { nivel, limite: String(limite) };
+    if (busca.trim()) params['busca'] = busca.trim();
+    return this.chamar(firstValueFrom(this.http.get<LogEntry[]>(`${base}/logs`, { params, headers: this.headers() })));
   }
 
   consolidado(data: string) {

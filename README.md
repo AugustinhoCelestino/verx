@@ -69,7 +69,7 @@ cd web && npm install && npm start              # http://localhost:4200
 
 ### Login e usuários
 
-A tela do Angular pede login (ou cadastro). Em Development já existe o usuário demo **`demo@verx.com` / `Demo@12345`**. O token JWT (`POST /auth/login`) identifica o usuário (`sub`, `name`, `email`) e cada lançamento guarda quem o registrou. Endpoints: `POST /auth/registrar`, `POST /auth/login`, `GET /auth/me`.
+A tela do Angular pede login (ou cadastro) e tem um menu com **Lançamentos** (registro, saldo consolidado e lista do dia) e **Logs** (consulta de `/logs` de cada API, com filtro por serviço, nível e texto). Em Development já existe o usuário demo **`demo@verx.com` / `Demo@12345`**. O token JWT (`POST /auth/login`) identifica o usuário (`sub`, `name`, `email`) e cada lançamento guarda quem o registrou. Endpoints: `POST /auth/registrar`, `POST /auth/login`, `GET /auth/me`.
 
 > Ao atualizar de uma versão sem login, o schema do SQLite local é atualizado automaticamente (lançamentos antigos ficam sem usuário). Com SQL Server existente, apague o banco para recriar o schema.
 

@@ -8,6 +8,18 @@
 .sessao button { background: transparent; border: 1px solid rgba(255, 255, 255, 0.6); color: #fff; }
 .sessao button:hover { background: rgba(255, 255, 255, 0.12); }
 
+.menu { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; display: flex; gap: 0.25rem; }
+.menu button { background: transparent; color: rgba(255, 255, 255, 0.75); border: 0; border-bottom: 3px solid transparent; border-radius: 0; padding: 0.6rem 1rem; }
+.menu button:hover { color: #fff; }
+.menu button.ativo { color: #fff; border-bottom-color: #fff; }
+
+.logs td { vertical-align: top; font-size: 0.85rem; }
+.logs td:nth-child(3) { word-break: break-all; color: var(--texto-suave); }
+.logs pre { margin: 0.3rem 0 0; white-space: pre-wrap; font-size: 0.75rem; color: var(--vermelho); }
+.nivel { font-size: 0.7rem; font-weight: 600; padding: 0.1rem 0.4rem; border-radius: 4px; background: #eef2fa; color: var(--azul); }
+.nivel.Warning { background: #fff4e0; color: #8a5a00; }
+.nivel.Error, .nivel.Critical { background: #fdf0f1; color: var(--vermelho); }
+
 main { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
 
 .card { background: var(--superficie); border: 1px solid var(--borda); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05); }

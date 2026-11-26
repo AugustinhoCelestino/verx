@@ -1,7 +1,7 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, Lancamento, SaldoDiario, Tipo } from './api.service';
+import { ApiService, Lancamento, LogEntry, NivelLog, SaldoDiario, Servico, Tipo } from './api.service';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +25,15 @@ export class App {
   protected readonly toast = signal('');
   private toastTimer?: ReturnType<typeof setTimeout>;
 
+  protected readonly aba = signal<'lancamentos' | 'logs'>('lancamentos');
+  protected readonly niveis: NivelLog[] = ['Trace', 'Debug', 'Information', 'Warning', 'Error', 'Critical'];
+  protected servicoLog: Servico = 'lancamentos';
+  protected nivelLog: NivelLog = 'Information';
+  protected buscaLog = '';
+  protected limiteLog = 100;
+  protected readonly logs = signal<LogEntry[]>([]);
+  protected readonly erroLogs = signal('');
+
   protected modoCadastro = false;
   protected nome = '';
   protected email = '';
@@ -38,9 +47,26 @@ export class App {
       else {
         this.lancamentos.set([]);
         this.saldo.set(null);
+        this.logs.set([]);
+        this.aba.set('lancamentos');
         this.fecharToast();
       }
     });
+  }
+
+  protected abrir(aba: 'lancamentos' | 'logs') {
+    this.aba.set(aba);
+    if (aba === 'logs') void this.consultarLogs();
+  }
+
+  protected async consultarLogs() {
+    this.erroLogs.set('');
+    try {
+      this.logs.set(await this.api.logs(this.servicoLog, this.nivelLog, this.buscaLog, this.limiteLog));
+    } catch (e: any) {
+      this.logs.set([]);
+      if (e?.status !== 401) this.erroLogs.set('Não foi possível consultar os logs. Verifique se o serviço está no ar.');
+    }
   }
 
   protected async entrar() {
