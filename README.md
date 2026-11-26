@@ -2,6 +2,7 @@
 
 Solução para o desafio de Arquiteto de Soluções: um comerciante registra **débitos e créditos** e consulta o **saldo diário consolidado**.
 
+▶️ **Vídeo de apresentação do case:** [assistir no YouTube](https://www.youtube.com/watch?v=aEXiuiprxW8)
 - **Back-end:** .NET 10 (ASP.NET Core com controllers, EF Core, SQL Server)
 - **Mensageria:** RabbitMQ
 - **Front-end:** Angular
