@@ -26,14 +26,16 @@ Angular ──► Consolidado API ◄── Consumer ──► SQL Server (saldo
 
 | Documento | Conteúdo |
 |---|---|
-| [docs/001-requisitos.md](docs/001-requisitos.md) | Requisitos funcionais e não funcionais, tecnologias e escopo |
+| [docs/000-visao-geral.md](docs/000-visao-geral.md) | Resumo de uma página, com links para os demais documentos |
+| [docs/001-requisitos.md](docs/001-requisitos.md) | Requisitos funcionais e não funcionais (com prioridade MoSCoW), tecnologias e escopo |
 | [docs/002-dominios.md](docs/002-dominios.md) | Domínios, capacidades de negócio e glossário |
 | [docs/003-desenho-da-solucao.md](docs/003-desenho-da-solucao.md) | Desenho da solução (C4/Mermaid), fluxos de escrita e de leitura |
 | [docs/004-decisao-escolha.md](docs/004-decisao-escolha.md) | Tecnologias escolhidas, atendimento dos RNFs, trade-offs e mapeamento para nuvem |
-| [docs/005-transicao-legado.md](docs/005-transicao-legado.md) | Arquitetura de transição (migração do legado) |
+| [docs/005-transicao-legado.md](docs/005-transicao-legado.md) | Arquitetura de transição (migração do legado) e impacto operacional |
 | [docs/006-estimativa-custos.md](docs/006-estimativa-custos.md) | Estimativa de custos em US$ e R$ |
-| [docs/007-monitoramento.md](docs/007-monitoramento.md) | Health, métricas, logs, SLOs e alertas |
-| [docs/008-seguranca.md](docs/008-seguranca.md) | Segurança no consumo das APIs, login e limitações |
+| [docs/007-monitoramento.md](docs/007-monitoramento.md) | Health, métricas, logs, correlation-id, SLOs e alertas |
+| [docs/008-seguranca.md](docs/008-seguranca.md) | Segurança no consumo das APIs, login, LGPD e limitações |
+| [docs/009-riscos.md](docs/009-riscos.md) | Matriz de riscos com mitigação |
 | [docs/diagramas/arquitetura-alvo.drawio](docs/diagramas/arquitetura-alvo.drawio) | Diagramas da arquitetura em draw.io (editável) |
 | [docs/adr/](docs/adr) | Decisões arquiteturais (ADRs) |
 

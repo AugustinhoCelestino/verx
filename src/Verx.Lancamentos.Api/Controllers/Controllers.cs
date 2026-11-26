@@ -38,7 +38,7 @@ public sealed class AuthController(AuthService svc) : ControllerBase
 [ApiController]
 [Route("lancamentos")]
 [Authorize]
-public sealed class LancamentosController(LancamentoService svc, TimeProvider clock) : ControllerBase
+public sealed class LancamentosController(LancamentoService svc, TimeProvider clock, ILogger<LancamentosController> logger) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType<LancamentoResponse>(StatusCodes.Status201Created)]
@@ -47,6 +47,7 @@ public sealed class LancamentosController(LancamentoService svc, TimeProvider cl
     {
         if (User.Atual() is not { } usuario) return Unauthorized();
         var criado = await svc.RegistrarAsync(req, usuario, ct);
+        logger.LogInformation("Lançamento {LancamentoId} registrado ({Tipo}, {Valor}).", criado.Id, criado.Tipo, criado.Valor);
         return Created($"/lancamentos/{criado.Id}", criado);
     }
 

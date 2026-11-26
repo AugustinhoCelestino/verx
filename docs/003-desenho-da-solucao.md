@@ -16,6 +16,18 @@ Os diagramas das seções 2, 3 e 4 estão em Mermaid neste documento e também e
 
 Para abrir o arquivo, use app.diagrams.net → Arquivo → Abrir, ou a extensão draw.io do VS Code. Ao alterar um diagrama, mantenha as duas versões iguais.
 
+**Padrão visual** (o mesmo no Mermaid e no draw.io):
+
+| Cor | Significado |
+|---|---|
+| Azul | Serviço ou aplicação |
+| Verde | Banco de dados e cache |
+| Laranja | Mensageria (exchange e filas) |
+| Cinza | Sistema externo ou de apoio (IdP, Prometheus) |
+| Vermelho | Falha (DLQ) |
+
+Linha contínua é chamada síncrona; linha tracejada é evento, apoio ou falha.
+
 ## 2. Visão de contexto (C4 – nível 1)
 
 ```mermaid
@@ -25,6 +37,11 @@ flowchart LR
     W -->|HTTPS + JWT| K[Serviço de Consolidado]
     L -.->|evento LancamentoRegistrado| K
     IdP[(Identity Provider OIDC)] -. emite tokens .-> W
+
+    classDef svc fill:#DAE8FC,stroke:#254F9B,color:#1A1A1A
+    classDef ext fill:#F5F5F5,stroke:#666666,color:#1A1A1A
+    class C,W,L,K svc
+    class IdP ext
 ```
 
 ## 3. Containers (C4 – nível 2)
@@ -62,6 +79,17 @@ flowchart LR
     Q --> CO
     PROM[Prometheus] -. scrape /metrics .-> LA
     PROM -. scrape /metrics .-> CA
+
+    classDef svc fill:#DAE8FC,stroke:#254F9B,color:#1A1A1A
+    classDef data fill:#D5E8D4,stroke:#2E7D32,color:#1A1A1A
+    classDef msg fill:#FFE6CC,stroke:#B36B00,color:#1A1A1A
+    classDef ext fill:#F5F5F5,stroke:#666666,color:#1A1A1A
+    classDef fail fill:#F8CECC,stroke:#C20016,color:#1A1A1A
+    class W,LA,OP,CO,CA svc
+    class LDB,CDB,CACHE data
+    class EX,Q msg
+    class PROM ext
+    class DLQ fail
 ```
 
 Os dois domínios têm bancos de dados distintos e não se acessam diretamente. A única integração é o evento `LancamentoRegistrado`, definido em `Verx.Contracts`, sem chamada síncrona entre os serviços.

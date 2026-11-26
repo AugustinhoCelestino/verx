@@ -73,3 +73,5 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .card { overflow-x: auto; }
 }
+
+.cid { font-family: monospace; font-size: 11px; word-break: break-all; }

@@ -63,17 +63,18 @@
     </form>
     @if (erroLogs()) { <p class="erro">{{ erroLogs() }}</p> }
     <table class="logs">
-      <thead><tr><th>Data/hora</th><th>Nível</th><th>Categoria</th><th>Mensagem</th></tr></thead>
+      <thead><tr><th>Data/hora</th><th>Nível</th><th>Categoria</th><th>Correlation-id</th><th>Mensagem</th></tr></thead>
       <tbody>
         @for (l of logs(); track $index) {
           <tr>
             <td>{{ l.timestamp | date: 'dd/MM HH:mm:ss' }}</td>
             <td><span class="nivel" [class]="'nivel ' + l.nivel">{{ l.nivel }}</span></td>
             <td>{{ l.categoria }}</td>
+            <td class="cid">{{ l.correlationId }}</td>
             <td>{{ l.mensagem }}@if (l.excecao) { <pre>{{ l.excecao }}</pre> }</td>
           </tr>
         } @empty {
-          <tr><td colspan="4">Nenhum log encontrado.</td></tr>
+          <tr><td colspan="5">Nenhum log encontrado.</td></tr>
         }
       </tbody>
     </table>

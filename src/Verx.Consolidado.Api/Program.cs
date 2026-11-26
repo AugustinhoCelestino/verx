@@ -64,6 +64,7 @@ builder.Services.AddOpenTelemetry().WithMetrics(m => m
 
 var app = builder.Build();
 
+app.UseCorrelacao();
 app.UseCors();
 if (app.Environment.IsDevelopment())
 {

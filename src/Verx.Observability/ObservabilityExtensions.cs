@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,15 @@ public static class ObservabilityExtensions
         services.AddControllers().AddApplicationPart(typeof(ObservabilityExtensions).Assembly);
         return services;
     }
+
+    /// <summary>Garante um trace id por requisição e o devolve no cabeçalho <c>X-Correlation-Id</c>. Use antes dos demais middlewares.</summary>
+    public static IApplicationBuilder UseCorrelacao(this IApplicationBuilder app) =>
+        app.Use(async (ctx, next) =>
+        {
+            using var propria = System.Diagnostics.Activity.Current is null ? new System.Diagnostics.Activity("http").Start() : null;
+            ctx.Response.Headers["X-Correlation-Id"] = System.Diagnostics.Activity.Current!.TraceId.ToString();
+            await next();
+        });
 }
 
 public sealed record HealthCheckItem(string Nome, string Status, string? Descricao, double DuracaoMs);

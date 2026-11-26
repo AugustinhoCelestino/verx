@@ -85,6 +85,7 @@ app.UseExceptionHandler(e => e.Run(async ctx =>
     ctx.Response.StatusCode = status;
     await ctx.Response.WriteAsJsonAsync(new ProblemDetails { Title = title, Status = status });
 }));
+app.UseCorrelacao();
 app.UseCors();
 if (app.Environment.IsDevelopment())
 {

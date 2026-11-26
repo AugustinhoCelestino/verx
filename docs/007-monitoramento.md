@@ -13,6 +13,9 @@ Este documento descreve como a solução é monitorada, para atender ao requisit
 | Métricas | `GET /metrics` (Prometheus via OpenTelemetry): taxa, latência e erros HTTP | Lançamentos e Consolidado |
 | Prometheus | Coleta as métricas dos dois serviços; no `docker-compose` fica em `http://localhost:9090` | `docker-compose` |
 | Logs estruturados | Logs do ASP.NET Core; os erros do consumer incluem o delivery tag e a flag de reentrega | Lançamentos e Consolidado |
+| Correlation-id | Cada requisição recebe um trace id (W3C), devolvido no cabeçalho `X-Correlation-Id`, gravado no evento `LancamentoRegistrado` e retomado no Consolidado; cada log traz o id e a busca de logs o aceita | Lançamentos e Consolidado |
+
+Para rastrear um lançamento: pegue o `X-Correlation-Id` da resposta de `POST /lancamentos` e busque por ele na aba **Logs** de cada serviço; o mesmo id aparece no registro do lançamento e na aplicação do evento ao saldo.
 
 Os endpoints de health e de logs são controllers e aparecem no Swagger de cada serviço.
 
@@ -35,7 +38,7 @@ Os endpoints de health e de logs são controllers e aparecem no Swagger de cada 
 - Readiness falhando.
 
 ## 4. Evolução
-- Traces distribuídos (OpenTelemetry, com `traceparent` nas mensagens).
+- Exportar traces distribuídos (OpenTelemetry/OTLP) e propagar `traceparent` também nas mensagens do broker (hoje o id viaja no corpo do evento).
 - Dashboards no Grafana.
 - Métricas de negócio, como lançamentos por minuto e atraso do consolidado.
 - Logs centralizados.

@@ -16,7 +16,7 @@ public sealed class LancamentoService(ILancamentoRepository lancamentos, IOutbox
         lancamentos.Adicionar(lancamento);
         // Eventos de domínio viram eventos de integração (contrato público) no outbox.
         foreach (var e in lancamento.EventosDeDominio.OfType<LancamentoRegistradoEvent>())
-            outbox.Adicionar(new LancamentoRegistrado(Guid.NewGuid(), e.LancamentoId, (TipoContrato)(int)e.Tipo, e.Valor.Valor, e.Data, e.OcorridoEm), agora);
+            outbox.Adicionar(new LancamentoRegistrado(Guid.NewGuid(), e.LancamentoId, (TipoContrato)(int)e.Tipo, e.Valor.Valor, e.Data, e.OcorridoEm, Correlacao.Atual), agora);
         lancamento.LimparEventos();
 
         // Uma única transação: lançamento e evento são persistidos juntos ou nenhum dos dois.

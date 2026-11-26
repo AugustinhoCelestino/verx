@@ -39,6 +39,8 @@ Cada escolha responde a um requisito de [001-requisitos.md](001-requisitos.md). 
 ## 3. Padrão arquitetural e trade-offs
 Dois serviços (microsserviços enxutos) orientados a eventos, com CQRS leve: o modelo de escrita é diferente do modelo de leitura pré-agregado. Um monolito seria mais simples, mas não isola falhas (RNF01) nem escala leitura e escrita de forma independente. Os detalhes estão nos ADRs em [`adr/`](adr/).
 
+**Por que não Event Sourcing?** O Event Sourcing guarda os eventos como fonte da verdade e reconstrói o estado por replay. Aqui os lançamentos já são imutáveis e o saldo é pré-agregado, então o ganho principal (histórico completo) já existe de forma mais simples: a tabela de lançamentos mais o outbox. O Event Sourcing exigiria um *event store*, *snapshots*, versionamento de eventos e uma curva de aprendizado maior, sem benefício claro para um volume de 50 req/s. Fica como **evolução** se surgirem estornos, auditoria temporal ou reconstrução de saldo em qualquer data; o contrato `LancamentoRegistrado` já é um evento de domínio e facilita essa migração.
+
 ## 4. Mapeamento para nuvem (alvo)
 
 | Local (docker-compose) | Alvo de produção (ex.: Azure; equivalente em AWS) |

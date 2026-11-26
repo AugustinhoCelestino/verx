@@ -32,6 +32,7 @@ export interface LogEntry {
   categoria: string;
   mensagem: string;
   excecao?: string | null;
+  correlationId?: string | null;
 }
 
 export interface Usuario {

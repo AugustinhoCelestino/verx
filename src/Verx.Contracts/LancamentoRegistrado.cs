@@ -7,10 +7,12 @@ public enum TipoLancamento
 }
 
 /// <summary>Evento de integração publicado pelo serviço de Lançamentos.</summary>
+/// <param name="CorrelationId">Id de rastreio (trace id W3C) da requisição que originou o evento; opcional.</param>
 public sealed record LancamentoRegistrado(
     Guid EventId,
     Guid LancamentoId,
     TipoLancamento Tipo,
     decimal Valor,
     DateOnly Data,
-    DateTimeOffset OcorridoEm);
+    DateTimeOffset OcorridoEm,
+    string? CorrelationId = null);
