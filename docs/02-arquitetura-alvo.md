@@ -60,7 +60,7 @@ sequenceDiagram
     participant C as Consumer Consolidado
     participant CDB as DB Consolidado
     U->>L: POST /lancamentos
-    L->>DB: BEGIN; INSERT lancamento + INSERT outbox; COMMIT
+    L->>DB: BEGIN, INSERT lancamento + INSERT outbox, COMMIT
     L-->>U: 201 Created
     loop a cada 1s
       O->>DB: SELECT outbox pendente
