@@ -12,9 +12,10 @@ import { ApiService, Lancamento, SaldoDiario, Tipo } from './api.service';
 export class App {
   private readonly api = inject(ApiService);
 
-  protected data = new Date().toISOString().slice(0, 10);
+  protected data = new Date().toLocaleDateString('sv-SE'); // yyyy-MM-dd no fuso local
   protected tipo: Tipo = 1;
   protected valor: number | null = null;
+  protected valorTexto = '';
   protected descricao = '';
 
   protected readonly usuario = this.api.usuario;
@@ -53,6 +54,15 @@ export class App {
     }
   }
 
+  // Máscara monetária (pt-BR): os dígitos digitados entram como centavos, ex.: 12345 -> 123,45.
+  protected aoDigitarValor(e: Event) {
+    const campo = e.target as HTMLInputElement;
+    const digitos = campo.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 13);
+    this.valor = digitos ? Number(digitos) / 100 : null;
+    this.valorTexto = this.valor === null ? '' : this.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    campo.value = this.valorTexto;
+  }
+
   protected sair() {
     this.api.logout();
   }
@@ -83,6 +93,7 @@ export class App {
       const antes = this.saldo()?.quantidadeLancamentos ?? 0;
       await this.api.registrar(this.tipo, this.valor, this.data, this.descricao);
       this.valor = null;
+      this.valorTexto = '';
       this.descricao = '';
       this.mostrarToast('Lançamento registrado. O consolidado é atualizado de forma assíncrona.');
       await this.atualizar();

@@ -41,7 +41,10 @@
           <option [ngValue]="2">Débito</option>
         </select>
       </label>
-      <label>Valor <input type="number" step="0.01" min="0.01" name="valor" [(ngModel)]="valor" /></label>
+      <label>Valor (R$)
+        <input type="text" inputmode="numeric" autocomplete="off" placeholder="0,00" name="valor"
+               [value]="valorTexto" (input)="aoDigitarValor($event)" />
+      </label>
       <label>Descrição <input type="text" maxlength="200" name="descricao" [(ngModel)]="descricao" /></label>
       <button type="submit">Registrar</button>
     </form>
