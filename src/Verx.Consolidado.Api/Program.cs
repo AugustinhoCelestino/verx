@@ -5,7 +5,6 @@ using Microsoft.OpenApi;
 using OpenTelemetry.Metrics;
 using Verx.Consolidado.Api.Application;
 using Verx.Consolidado.Api.Domain;
-using Verx.Consolidado.Api.Endpoints;
 using Verx.Consolidado.Api.Infrastructure.Caching;
 using Verx.Consolidado.Api.Infrastructure.Messaging;
 using Verx.Consolidado.Api.Infrastructure.Persistence;
@@ -48,6 +47,7 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
     .AllowAnyHeader().AllowAnyMethod()));
 
 builder.Services.AddHealthChecks().AddDbContextCheck<ConsolidadoDbContext>("sqlserver");
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -78,8 +78,7 @@ app.MapHealthChecks("/health/live", new() { Predicate = _ => false });
 app.MapHealthChecks("/health/ready");
 app.MapPrometheusScrapingEndpoint("/metrics");
 
-if (usaHttp) app.MapEventosInternos();
-app.MapConsolidado();
+app.MapControllers();
 
 app.Run();
 

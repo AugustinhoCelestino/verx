@@ -8,7 +8,6 @@ using OpenTelemetry.Metrics;
 using Verx.Contracts;
 using Verx.Lancamentos.Api.Application;
 using Verx.Lancamentos.Api.Domain;
-using Verx.Lancamentos.Api.Endpoints;
 using Verx.Lancamentos.Api.Infrastructure.Messaging;
 using Verx.Lancamentos.Api.Infrastructure.Persistence;
 using Verx.Lancamentos.Api.Infrastructure.Security;
@@ -57,6 +56,7 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
     .AllowAnyHeader().AllowAnyMethod()));
 
 builder.Services.AddHealthChecks().AddDbContextCheck<LancamentosDbContext>("sqlserver");
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -109,8 +109,7 @@ if (app.Environment.IsDevelopment() && app.Configuration.GetValue("Auth:SeedDemo
     catch (DomainException) { /* já existe */ }
 }
 
-app.MapAuth();
-app.MapLancamentos();
+app.MapControllers();
 
 app.Run();
 

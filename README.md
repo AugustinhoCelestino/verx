@@ -134,7 +134,7 @@ Cada API é um *bounded context* com as mesmas camadas, em pastas/namespaces, e 
 | **Domain** (sem EF/ASP.NET) | agregados `Lancamento` e `Usuario`, value objects `Dinheiro` e `Email`, evento de domínio `LancamentoRegistradoEvent`, portas de repositório | agregado `SaldoDiario`, `EventoProcessado`, portas de repositório |
 | **Application** | casos de uso `LancamentoService` e `AuthService`, DTOs, portas (`IUnitOfWork`, `IOutbox`, `ITokenService`) | caso de uso `ConsolidadoService` (idempotência, concorrência otimista), portas (`IUnitOfWork`, `ISaldoCache`) |
 | **Infrastructure** | EF Core (repositórios, outbox), publisher e transportes RabbitMQ/HTTP, JWT, PBKDF2 | EF Core, consumer RabbitMQ, cache em memória, JWT |
-| **Endpoints / Program** | rotas `/auth` e `/lancamentos`, composição | rotas `/consolidado`, `/internal/eventos`, composição |
+| **Controllers / Program** | `AuthController` e `LancamentosController`, composição | `ConsolidadoController` e `EventosInternosController`, composição |
 
 O evento de domínio fica dentro do contexto; só o evento de integração `LancamentoRegistrado` (em `Verx.Contracts`) cruza a fronteira entre os serviços. Os bancos e os contratos HTTP/JSON não mudaram.
 
