@@ -2,7 +2,7 @@
 
 Solução para o desafio de Arquiteto de Soluções: um comerciante registra **débitos e créditos** e consulta o **saldo diário consolidado**.
 
-- **Back-end:** .NET 10 (ASP.NET Core minimal APIs, EF Core, SQL Server)
+- **Back-end:** .NET 10 (ASP.NET Core com controllers, EF Core, SQL Server)
 - **Mensageria:** RabbitMQ
 - **Front-end:** Angular
 - **Testes:** xUnit (unitários/integração com SQLite em memória) e k6 (carga)
@@ -26,10 +26,15 @@ Angular ──► Consolidado API ◄── Consumer ──► SQL Server (saldo
 
 | Documento | Conteúdo |
 |---|---|
-| [docs/01-dominios-e-requisitos.md](docs/01-dominios-e-requisitos.md) | Domínios, capacidades, requisitos funcionais e não funcionais |
-| [docs/02-arquitetura-alvo.md](docs/02-arquitetura-alvo.md) | Desenho da solução (C4/Mermaid), fluxos, trade-offs, mapeamento para nuvem |
-| [docs/03-transicao-e-custos.md](docs/03-transicao-e-custos.md) | Arquitetura de transição (legado) e estimativa de custos |
-| [docs/04-seguranca-e-observabilidade.md](docs/04-seguranca-e-observabilidade.md) | Segurança de consumo, monitoramento e SLOs |
+| [docs/001-requisitos.md](docs/001-requisitos.md) | Requisitos funcionais e não funcionais, tecnologias e escopo |
+| [docs/002-dominios.md](docs/002-dominios.md) | Domínios, capacidades de negócio e glossário |
+| [docs/003-desenho-da-solucao.md](docs/003-desenho-da-solucao.md) | Desenho da solução (C4/Mermaid), fluxos de escrita e de leitura |
+| [docs/004-decisao-escolha.md](docs/004-decisao-escolha.md) | Tecnologias escolhidas, atendimento dos RNFs, trade-offs e mapeamento para nuvem |
+| [docs/005-transicao-legado.md](docs/005-transicao-legado.md) | Arquitetura de transição (migração do legado) |
+| [docs/006-estimativa-custos.md](docs/006-estimativa-custos.md) | Estimativa de custos em US$ e R$ |
+| [docs/007-monitoramento.md](docs/007-monitoramento.md) | Health, métricas, logs, SLOs e alertas |
+| [docs/008-seguranca.md](docs/008-seguranca.md) | Segurança no consumo das APIs, login e limitações |
+| [docs/diagramas/arquitetura-alvo.drawio](docs/diagramas/arquitetura-alvo.drawio) | Diagramas da arquitetura em draw.io (editável) |
 | [docs/adr/](docs/adr) | Decisões arquiteturais (ADRs) |
 
 ## Executar localmente
@@ -122,7 +127,7 @@ src/Verx.Lancamentos.Api    contexto Lançamentos, em camadas DDD (veja abaixo)
 src/Verx.Consolidado.Api    contexto Consolidado, em camadas DDD (veja abaixo)
 tests/                      testes xUnit e script k6
 web/                        SPA Angular
-docs/                       arquitetura, requisitos, ADRs
+docs/                       documentação numerada (001 a 008), diagramas draw.io e ADRs
 ops/                        configuração do Prometheus
 ```
 
