@@ -1,5 +1,7 @@
 # 2. Arquitetura alvo
 
+> Os diagramas 2.1, 2.2 e 2.3 também existem em versão editável no draw.io: [diagramas/arquitetura-alvo.drawio](diagramas/arquitetura-alvo.drawio) (uma página por diagrama). Para abrir, use app.diagrams.net → Arquivo → Abrir, ou a extensão draw.io do VS Code.
+
 ## 2.1 Visão de contexto (C4 – nível 1)
 
 ```mermaid
