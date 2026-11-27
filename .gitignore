@@ -6,3 +6,6 @@ web/.angular/
 .vs/
 *.user
 run/data/
+.env
+.env.*
+!.env.example

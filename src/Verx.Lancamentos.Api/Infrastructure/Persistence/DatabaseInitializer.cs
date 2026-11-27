@@ -47,5 +47,11 @@ public static class DatabaseInitializer
             await db.Database.ExecuteSqlRawAsync("""ALTER TABLE "Lancamentos" ADD COLUMN "UsuarioId" TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';""");
         if (!colunas.Contains("UsuarioNome"))
             await db.Database.ExecuteSqlRawAsync("""ALTER TABLE "Lancamentos" ADD COLUMN "UsuarioNome" TEXT NOT NULL DEFAULT '';""");
+
+        var colunasOutbox = await db.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('Outbox')").ToListAsync();
+        if (!colunasOutbox.Contains("DescartadoEm"))
+            await db.Database.ExecuteSqlRawAsync("""ALTER TABLE "Outbox" ADD COLUMN "DescartadoEm" INTEGER NULL;""");
+        if (!colunasOutbox.Contains("UltimoErro"))
+            await db.Database.ExecuteSqlRawAsync("""ALTER TABLE "Outbox" ADD COLUMN "UltimoErro" TEXT NULL;""");
     }
 }

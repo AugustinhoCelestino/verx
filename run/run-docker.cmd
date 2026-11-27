@@ -63,7 +63,7 @@ dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all
 wsl --install --no-distribution
 echo.
 echo =====================================================================
-echo  REINICIE O WINDOWS e execute run\run.cmd novamente.
+echo  REINICIE O WINDOWS e execute run\run-docker.cmd novamente.
 echo  Se apos reiniciar esta mensagem voltar a aparecer, habilite a
 echo  virtualizacao (Intel VT-x / AMD-V / SVM) na BIOS do computador.
 echo =====================================================================
@@ -105,6 +105,10 @@ if errorlevel 1 (
     exit /b 1
 )
 
+if not exist .env (
+    echo Gerando .env com segredos locais aleatorios ^(fora do git^)...
+    powershell -NoProfile -Command "$g={ -join ((1..32) | ForEach-Object { [char[]]'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789' | Get-Random }) }; @('SA_PASSWORD=Sa1@'+(& $g), 'JWT_KEY='+(& $g)+(& $g), 'RABBITMQ_USER=verx', 'RABBITMQ_PASSWORD='+(& $g), 'ADMIN_EMAIL=demo@verx.com', 'DEMO_PASSWORD=A1@'+(& $g)) | Set-Content -Encoding ASCII .env"
+)
 echo [3/4] Construindo e iniciando os containers (a primeira execucao pode levar varios minutos)...
 docker compose up --build -d
 if errorlevel 1 (
@@ -136,9 +140,9 @@ echo.
 echo   Web (Angular)    http://localhost:4200
 echo   Lancamentos API  http://localhost:5101
 echo   Consolidado API  http://localhost:5102
-echo   RabbitMQ         http://localhost:15672  (guest / guest)
+echo   RabbitMQ         http://localhost:15672  (usuario/senha: RABBITMQ_USER / RABBITMQ_PASSWORD no .env)
 echo   Prometheus       http://localhost:9090
 echo.
-echo Para parar tudo, execute run\stop.cmd
+echo Para parar tudo, execute run\stop-docker.cmd
 pause
 endlocal

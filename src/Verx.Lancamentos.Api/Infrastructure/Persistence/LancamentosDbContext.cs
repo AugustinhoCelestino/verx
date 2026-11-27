@@ -13,6 +13,9 @@ public sealed class OutboxMessage
     public DateTimeOffset CriadoEm { get; set; }
     public DateTimeOffset? PublicadoEm { get; set; }
     public int Tentativas { get; set; }
+    /// <summary>Preenchido quando a mensagem esgotou as tentativas: sai da fila de publicação e aguarda análise (dead-letter).</summary>
+    public DateTimeOffset? DescartadoEm { get; set; }
+    public string? UltimoErro { get; set; }
 }
 
 public sealed class LancamentosDbContext(DbContextOptions<LancamentosDbContext> options) : DbContext(options)

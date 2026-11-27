@@ -66,7 +66,14 @@ set ASPNETCORE_ENVIRONMENT=Development
 set Database__Provider=Sqlite
 set Messaging__Provider=Http
 set Messaging__Http__ConsolidadoUrl=http://localhost:5102
-set Messaging__Http__ApiKey=dev-only-internal-key
+set Jwt__Admins__0=demo@verx.com
+
+rem Segredos locais: gerados na primeira execucao e guardados em run\data (fora do git). Nada fixo no repositorio.
+if not exist run\data\segredos.cmd (
+    powershell -NoProfile -Command "$g={ -join ((1..48) | ForEach-Object { [char[]]'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789' | Get-Random }) }; @('set Jwt__Key='+(& $g), 'set Messaging__Http__ApiKey='+(& $g), 'set Auth__DemoSenha=A1@'+(& $g).Substring(0,12)) | Set-Content -Encoding ASCII run\data\segredos.cmd"
+)
+call run\data\segredos.cmd
+echo Usuario demo: demo@verx.com  Senha: %Auth__DemoSenha%  (guardada em run\data\segredos.cmd, fora do git)
 
 set "ConnectionStrings__Default=Data Source=%ROOT%\run\data\consolidado.db"
 start "Verx - Consolidado API" cmd /k dotnet run --no-build --project src\Verx.Consolidado.Api --urls http://localhost:5102

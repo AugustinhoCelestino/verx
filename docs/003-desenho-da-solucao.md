@@ -4,7 +4,7 @@ Este documento descreve a arquitetura alvo para atender aos requisitos de [001-r
 
 ## 1. Diagramas
 
-Os diagramas das seções 2, 3 e 4 estão em Mermaid neste documento e também em uma versão editável no draw.io:
+Os diagramas das seções 2, 3, 4 e 6 estão em Mermaid neste documento e também em uma versão editável no draw.io:
 
 [diagramas/arquitetura-alvo.drawio](diagramas/arquitetura-alvo.drawio)
 
@@ -13,6 +13,7 @@ Os diagramas das seções 2, 3 e 4 estão em Mermaid neste documento e também e
 | 1 | Contexto (C4 nível 1) | 2 |
 | 2 | Containers (C4 nível 2) | 3 |
 | 3 | Fluxo de escrita (sequência) | 4 |
+| 4 | Implantação (Docker Compose) | 6 |
 
 Para abrir o arquivo, use app.diagrams.net → Arquivo → Abrir, ou a extensão draw.io do VS Code. Ao alterar um diagrama, mantenha as duas versões iguais.
 
@@ -61,9 +62,11 @@ flowchart LR
     subgraph Broker
       EX{{Exchange verx.lancamentos}}
       Q[[Fila durável consolidado.lancamento-registrado]]
+      RQ[[Filas de espera retry 5s, 30s, 300s]]
       DLQ[[DLQ]]
       EX --> Q
-      Q -. falhas .-> DLQ
+      Q <-. falha transitória / volta após o TTL .-> RQ
+      Q -. falhas definitivas .-> DLQ
     end
     subgraph Consolidacao[Domínio Consolidado]
       CO[LancamentoConsumer<br/>BackgroundService]
@@ -87,12 +90,12 @@ flowchart LR
     classDef fail fill:#F8CECC,stroke:#C20016,color:#1A1A1A
     class W,LA,OP,CO,CA svc
     class LDB,CDB,CACHE data
-    class EX,Q msg
+    class EX,Q,RQ msg
     class PROM ext
     class DLQ fail
 ```
 
-Os dois domínios têm bancos de dados distintos e não se acessam diretamente. A única integração é o evento `LancamentoRegistrado`, definido em `Verx.Contracts`, sem chamada síncrona entre os serviços.
+Os dois domínios têm bancos de dados distintos e não se acessam diretamente. Com o broker (arquitetura alvo), a única integração é o evento `LancamentoRegistrado`, definido em `Verx.Contracts`, sem chamada síncrona entre os serviços. No modo local sem Docker (HTTP) o evento vai por `POST /internal/eventos` e o Consolidado confere o evento no Lançamentos (`GET /internal/eventos/{id}`) antes de aplicá-lo; essa conferência não existe com o broker. Mensagens que falham de forma transitória passam pelas filas de espera; as definitivas vão à DLQ, de onde um administrador as reprocessa (`POST /admin/dlq/reprocessar`).
 
 ## 4. Fluxo de escrita (comando)
 
@@ -122,3 +125,55 @@ O `201` não depende do broker nem do Consolidado: se qualquer um estiver fora, 
 
 ## 5. Fluxo de leitura (consulta)
 `GET /consolidado/{data}` → cache em memória (TTL configurável, padrão 10 s, invalidado quando o evento do dia é processado) → em *miss*, leitura por chave primária em `SaldoDiario`. Custo por requisição: uma busca por chave primária ou um acerto de cache.
+
+## 6. Implantação (Docker Compose)
+
+O `docker-compose.yml` entregue implanta isto (as seções 2 a 4 mostram a lógica; esta mostra onde cada peça roda):
+
+```mermaid
+flowchart LR
+    B[Navegador]
+    subgraph Host[Host Docker - rede interna do Compose]
+      WEB[web<br/>nginx + Angular :4200]
+      GW[gateway nginx<br/>:5101 Lançamentos / :5102 Consolidado]
+      subgraph LAN[lancamentos-api x2]
+        L1[réplica 1]
+        L2[réplica 2]
+      end
+      subgraph CON[consolidado-api x2]
+        C1[réplica 1]
+        C2[réplica 2]
+      end
+      MQ{{rabbitmq<br/>instância única}}
+      SQL[(sqlserver<br/>instância única<br/>VerxLancamentos e VerxConsolidado)]
+      PROM[prometheus :9090]
+      V1[(volume rabbitmq-data)]
+      V2[(volume sqlserver-data)]
+      V3[(volume prometheus-data)]
+    end
+    B --> WEB
+    B -->|HTTP + JWT| GW
+    GW -->|round-robin| L1 & L2 & C1 & C2
+    L1 & L2 --> SQL
+    C1 & C2 --> SQL
+    L1 & L2 -- publica via outbox --> MQ
+    MQ -- consumidores concorrentes --> C1 & C2
+    PROM -. scrape /metrics via DNS .-> L1 & L2 & C1 & C2
+    MQ --- V1
+    SQL --- V2
+    PROM --- V3
+
+    classDef svc fill:#DAE8FC,stroke:#254F9B,color:#1A1A1A
+    classDef data fill:#D5E8D4,stroke:#2E7D32,color:#1A1A1A
+    classDef msg fill:#FFE6CC,stroke:#B36B00,color:#1A1A1A
+    classDef ext fill:#F5F5F5,stroke:#666666,color:#1A1A1A
+    class WEB,GW,L1,L2,C1,C2 svc
+    class SQL,V1,V2,V3 data
+    class MQ msg
+    class B,PROM ext
+```
+
+- As APIs não publicam portas; o gateway é a única entrada e as réplicas escalam com `docker compose up -d --scale lancamentos-api=N`.
+- Os volumes nomeados preservam os dados em `docker compose down`.
+- **Limite:** SQL Server e RabbitMQ são instância única no Compose. A alta disponibilidade deles (SQL zona-redundante, RabbitMQ em cluster/quorum ou Service Bus) pertence ao ambiente de produção.
+- O modo sem Docker (`run\run.cmd`) não usa este desenho: roda as duas APIs e o Angular em processos locais com SQLite e HTTP no lugar do broker.

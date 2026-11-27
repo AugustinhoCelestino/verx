@@ -1,7 +1,8 @@
 global:
   scrape_interval: 10s
+# dns_sd descobre todas as réplicas de cada API (um registro A por container).
 scrape_configs:
   - job_name: lancamentos-api
-    static_configs: [{ targets: ["lancamentos-api:8080"] }]
+    dns_sd_configs: [{ names: ["lancamentos-api"], type: A, port: 8080 }]
   - job_name: consolidado-api
-    static_configs: [{ targets: ["consolidado-api:8080"] }]
+    dns_sd_configs: [{ names: ["consolidado-api"], type: A, port: 8080 }]

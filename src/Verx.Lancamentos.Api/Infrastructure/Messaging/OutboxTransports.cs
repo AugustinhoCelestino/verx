@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -13,6 +14,9 @@ public interface IOutboxTransport : IAsyncDisposable
     bool IsOpen { get; }
     Task SendAsync(OutboxMessage message, CancellationToken ct);
 }
+
+/// <summary>O destino está acessível mas recusou a mensagem (ex.: 4xx/500): conta como tentativa daquela mensagem, não como indisponibilidade.</summary>
+public sealed class MensagemRecusadaException(string message) : Exception(message);
 
 public interface IOutboxTransportFactory
 {
@@ -58,7 +62,7 @@ public sealed class RabbitTransportFactory(RabbitOptions options) : IOutboxTrans
 public sealed class HttpTransportOptions
 {
     public string ConsolidadoUrl { get; set; } = "http://localhost:5102";
-    public string ApiKey { get; set; } = "dev-only-internal-key";
+    public string ApiKey { get; set; } = "";
 }
 
 /// <summary>Modo local: entrega o evento por HTTP ao Consolidado. O outbox garante retentativa se ele estiver fora.</summary>
@@ -68,8 +72,8 @@ public sealed class HttpTransportFactory(IHttpClientFactory clients, IOptions<Ht
     {
         var client = clients.CreateClient("consolidado");
         client.BaseAddress = new Uri(options.Value.ConsolidadoUrl);
-        client.DefaultRequestHeaders.Remove("X-Api-Key");
-        client.DefaultRequestHeaders.Add("X-Api-Key", options.Value.ApiKey);
+        client.DefaultRequestHeaders.Remove(ChaveInterna.Cabecalho);
+                client.DefaultRequestHeaders.Add(ChaveInterna.Cabecalho, options.Value.ApiKey);
         return Task.FromResult<IOutboxTransport>(new HttpTransport(client));
     }
 
@@ -81,7 +85,14 @@ public sealed class HttpTransportFactory(IHttpClientFactory clients, IOptions<Ht
         {
             using var content = new StringContent(message.Payload, Encoding.UTF8, "application/json");
             using var response = await client.PostAsync("/internal/eventos", content, ct);
-            response.EnsureSuccessStatusCode();
+            if (response.IsSuccessStatusCode) return;
+
+            // 502/503/504 e 429 indicam indisponibilidade temporária: o publisher tenta de novo sem consumir tentativas.
+            if (response.StatusCode is HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable
+                or HttpStatusCode.GatewayTimeout or HttpStatusCode.TooManyRequests or HttpStatusCode.RequestTimeout)
+                response.EnsureSuccessStatusCode();
+
+            throw new MensagemRecusadaException($"Consolidado respondeu {(int)response.StatusCode} {response.StatusCode}.");
         }
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;

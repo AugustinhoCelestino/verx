@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -27,22 +25,45 @@ public sealed class ConsolidadoController(ConsolidadoService svc) : ControllerBa
             : Ok(await svc.ListarPeriodoAsync(de, ate, ct));
 }
 
+/// <summary>Administração da DLQ (só no desenho com broker; exige perfil admin).</summary>
+[ApiController]
+[Route("admin/dlq")]
+[Authorize(Roles = "admin")]
+public sealed class DlqController(DlqReprocessador? dlq = null) : ControllerBase
+{
+    [HttpGet]
+    public async Task<IActionResult> Contar(CancellationToken ct) =>
+        dlq is null ? NotFound() : Ok(new { mensagens = await dlq.ContarAsync(ct) });
+
+    [HttpPost("reprocessar")]
+    public async Task<IActionResult> Reprocessar([FromQuery] int limite = 100, CancellationToken ct = default) =>
+        dlq is null ? NotFound() : Ok(new { reprocessadas = await dlq.ReprocessarAsync(Math.Clamp(limite, 1, 1000), ct) });
+}
+
 /// <summary>Modo local (sem broker): recebe eventos do serviço de Lançamentos por HTTP, protegido por chave interna.</summary>
 [ApiController]
 [Route("internal/eventos")]
 [AllowAnonymous]
 [ApiExplorerSettings(IgnoreApi = true)]
-public sealed class EventosInternosController(ConsolidadoService svc, IConfiguration config) : ControllerBase
+public sealed class EventosInternosController(ConsolidadoService svc, VerificadorDeEvento verificador, IConfiguration config) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> Receber(LancamentoRegistrado evento, CancellationToken ct)
     {
         if (config["Messaging:Provider"] != "Http") return NotFound();
+        if (!ChaveInterna.Confere(Request.Headers[ChaveInterna.Cabecalho].ToString(), config["Messaging:Http:ApiKey"])) return Unauthorized();
 
-        var chave = Encoding.UTF8.GetBytes(config["Messaging:Http:ApiKey"] ?? "dev-only-internal-key");
-        var recebida = Encoding.UTF8.GetBytes(Request.Headers["X-Api-Key"].ToString());
-        if (!CryptographicOperations.FixedTimeEquals(recebida, chave)) return Unauthorized();
+        try
+        {
+            if (!await verificador.EhAutenticoAsync(evento, ct))
+                return UnprocessableEntity(new ProblemDetails { Title = "Evento sem lançamento correspondente.", Status = 422 });
+        }
+        catch (HttpRequestException)
+        {
+            // Lançamentos fora do ar: o outbox tenta de novo sem descartar a mensagem.
+            return StatusCode(StatusCodes.Status503ServiceUnavailable);
+        }
 
         await svc.ProcessarAsync(evento, ct);
         return Accepted();

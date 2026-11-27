@@ -33,7 +33,7 @@ public sealed class LancamentoServiceTests : IAsyncLifetime
 
     private LancamentoService Service() => new(new LancamentoRepository(_db), new OutboxWriter(_db), new EfUnitOfWork(_db), new FixedClock(_now));
 
-    private AuthService Auth() => new(new UsuarioRepository(_db), Hasher, new JwtTokenService(new JwtSettings()), new EfUnitOfWork(_db), new FixedClock(_now));
+    private AuthService Auth() => new(new UsuarioRepository(_db), Hasher, new JwtTokenService(new JwtSettings { Key = "chave-jwt-somente-para-testes-0123456789" }), new EfUnitOfWork(_db), new FixedClock(_now));
 
     private static readonly Pbkdf2SenhaHasher Hasher = new();
 

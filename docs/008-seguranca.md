@@ -9,7 +9,7 @@ Legenda do estado: **Implementado** existe na versão atual; **Evolução** é u
 | Camada | Controle | Estado |
 |---|---|---|
 | Autenticação | JWT Bearer (issuer, audience e assinatura validados) em `/lancamentos`, `/consolidado` e `/logs` | **Implementado** (chave simétrica de desenvolvimento) |
-| Autorização | Escopos ou roles por operação (`lancamentos:write`, `consolidado:read`) | Evolução |
+| Autorização | Perfil `admin` (claim `role`, definido por `Jwt:Admins`, lista de e-mails em configuração): só ele cadastra usuários (`POST /auth/registrar`) e consulta `/logs`. Escopos por operação (`lancamentos:write`, `consolidado:read`) ficam como evolução | **Implementado** (perfil admin) |
 | Identidade | OIDC com IdP (Entra ID ou Keycloak), chaves assimétricas (RS256) via JWKS e tokens curtos | Alvo |
 | Serviço a serviço | Não há chamadas síncronas entre serviços; o broker usa usuário e senha próprios por serviço, com permissões mínimas (publish ou consume) | Alvo |
 | Transporte | TLS em todos os saltos (gateway → serviços, serviços → banco e broker) | Alvo |
@@ -22,12 +22,15 @@ Legenda do estado: **Implementado** existe na versão atual; **Evolução** é u
 
 ## 2. Login e identificação do usuário
 
-- **Rotas:** cadastro em `POST /auth/registrar` e login em `POST /auth/login`, no serviço de Lançamentos. O Consolidado só valida o token.
+- **Rotas:** cadastro em `POST /auth/registrar` e login em `POST /auth/login`, no serviço de Lançamentos. O Consolidado só valida o token. O cadastro é **fechado**: exige token de admin (`Jwt:Admins`); o autocadastro público só existe com `Auth:PermitirAutoCadastro=true` (demonstração).
+- **Segredos:** não há segredo no repositório. `Jwt:Key` (mín. 32 bytes), `Messaging:Http:ApiKey` (mín. 16), senha do SQL Server e usuário/senha do RabbitMQ não têm valor padrão: sem configuração o serviço não sobe (em qualquer ambiente). Fornecimento: variáveis de ambiente, `dotnet user-secrets` ou cofre. No Compose, `.env` (ignorado pelo git; modelo em `.env.example`; `run\run-docker.cmd` o gera com valores aleatórios) e as variáveis ficam obrigatórias (`${VAR:?}`). `run\run.cmd` gera segredos aleatórios em `run\data\segredos.cmd` (fora do git).
+- **CI:** `.github/workflows/ci.yml` faz build e testes (.NET e Angular), falha com pacote NuGet ou npm vulnerável (`dotnet list package --vulnerable --include-transitive`, `npm audit --audit-level=high`; também roda toda segunda-feira), valida o Compose e barra segredos de desenvolvimento conhecidos no repositório.
+- **Modo HTTP (local):** a rota interna `POST /internal/eventos` do Consolidado exige a chave interna e confere no Lançamentos (`GET /internal/eventos/{id}`) se o evento existe e é idêntico ao do outbox; evento forjado é recusado (422) e não altera o saldo.
 - **Token:** JWT HS256 com validade de 8 horas, contendo `sub` (id do usuário), `name` e `email`.
 - **Senhas:** PBKDF2-SHA256 com 210 mil iterações, salt por usuário e comparação em tempo constante. A resposta de login é idêntica para e-mail inexistente e para senha errada.
 - **Autoria:** cada lançamento grava o `UsuarioId` e o `UsuarioNome` de quem o registrou, obtidos do token e nunca do corpo da requisição.
 - **Sessão no front-end:** o token fica no `sessionStorage`, e some ao fechar a aba. Se a API responder 401, o usuário volta para a tela de login.
-- **Usuário de demonstração:** em `Development` é criado `demo@verx.com` / `Demo@12345` (`Auth:SeedDemoUser`).
+- **Usuário de demonstração:** só é criado em `Development` e apenas se `Auth:DemoSenha` (variável `DEMO_PASSWORD` no Compose) estiver configurada; não há senha fixa no código.
 
 ## 3. Dados sensíveis e LGPD
 

@@ -59,7 +59,7 @@ public sealed class HealthController(HealthCheckService health) : ControllerBase
 }
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "admin")]
 [Route("logs")]
 [Tags("Logs")]
 public sealed class LogsController(LogStore store) : ControllerBase

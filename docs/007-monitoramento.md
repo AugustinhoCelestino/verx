@@ -32,12 +32,16 @@ Os endpoints de health e de logs são controllers e aparecem no Swagger de cada 
 
 ## 3. Alertas recomendados
 - Profundidade crescente da fila `consolidado.lancamento-registrado`.
-- Mensagens na DLQ maiores que zero.
+- Mensagens na DLQ maiores que zero (`GET /admin/dlq` no Consolidado, perfil admin). Após corrigir a causa, `POST /admin/dlq/reprocessar?limite=100` devolve as mensagens à fila principal; a idempotência por `EventId` evita duplicar o saldo.
 - Mensagens do outbox pendentes há mais de 1 minuto.
+- `verx_outbox_descartadas_total` > 0: mensagem do outbox esgotou as tentativas (5) e foi desviada (`DescartadoEm` preenchido) para análise manual; as demais seguem sendo publicadas.
 - Taxa de erros 5xx acima de 1%.
 - Readiness falhando.
 
-## 4. Evolução
+## 4. Retentativa e DLQ (desenho com broker)
+Falha transitória no consumidor: a mensagem vai para uma fila de espera (`...retry.5s`, `.30s`, `.300s`, com TTL) e volta sozinha à fila principal, com contador no cabeçalho `x-tentativa`. Após 3 retentativas, ou de imediato se a mensagem for ilegível ou rejeitada pelo domínio, ela segue para a DLQ com o motivo em `x-erro`.
+
+## 5. Evolução
 - Exportar traces distribuídos (OpenTelemetry/OTLP) e propagar `traceparent` também nas mensagens do broker (hoje o id viaja no corpo do evento).
 - Dashboards no Grafana.
 - Métricas de negócio, como lançamentos por minuto e atraso do consolidado.

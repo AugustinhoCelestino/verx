@@ -32,6 +32,7 @@ builder.Services.AddScoped<AuthService>();
 if (builder.Configuration["Messaging:Provider"] == "Http")
 {
     builder.Services.Configure<HttpTransportOptions>(builder.Configuration.GetSection("Messaging:Http"));
+    ChaveInterna.ExigirSegura(builder.Configuration["Messaging:Http:ApiKey"], "Messaging:Http:ApiKey");
     builder.Services.AddHttpClient("consolidado");
     builder.Services.AddSingleton<IOutboxTransportFactory, HttpTransportFactory>();
 }
@@ -43,6 +44,7 @@ else
 builder.Services.AddHostedService<OutboxPublisher>();
 
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
+jwt.ExigirChaveSegura();
 builder.Services.AddSingleton(jwt);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
@@ -69,6 +71,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddOpenTelemetry().WithMetrics(m => m
     .AddAspNetCoreInstrumentation()
+    .AddMeter(OutboxPublisher.MeterName)
     .AddPrometheusExporter());
 
 var app = builder.Build();
@@ -100,13 +103,14 @@ if (app.Configuration.GetValue("Database:AutoCreate", true))
 
 app.MapPrometheusScrapingEndpoint("/metrics");
 
-// Usuário de demonstração para o ambiente local (nunca em produção).
-if (app.Environment.IsDevelopment() && app.Configuration.GetValue("Auth:SeedDemoUser", true)
+// Usuário de demonstração para o ambiente local: só existe se a senha vier de configuração (nada fixo no repositório).
+var senhaDemo = app.Configuration["Auth:DemoSenha"];
+if (app.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(senhaDemo)
     && app.Configuration.GetValue("Database:AutoCreate", true))
 {
     using var scope = app.Services.CreateScope();
     var auth = scope.ServiceProvider.GetRequiredService<AuthService>();
-    try { await auth.RegistrarAsync(new("Comerciante Demo", "demo@verx.com", "Demo@12345"), default); }
+    try { await auth.RegistrarAsync(new("Comerciante Demo", app.Configuration["Auth:DemoEmail"] ?? "demo@verx.com", senhaDemo), default); }
     catch (DomainException) { /* já existe */ }
 }
 

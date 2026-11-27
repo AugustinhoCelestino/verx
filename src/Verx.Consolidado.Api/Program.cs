@@ -27,14 +27,19 @@ builder.Services.AddScoped<IEventoProcessadoRepository, EventoProcessadoReposito
 builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 builder.Services.AddSingleton<ISaldoCache, MemorySaldoCache>();
 builder.Services.AddScoped<ConsolidadoService>();
+builder.Services.AddHttpClient<VerificadorDeEvento>();
 var usaHttp = builder.Configuration["Messaging:Provider"] == "Http";
+if (usaHttp)
+    ChaveInterna.ExigirSegura(builder.Configuration["Messaging:Http:ApiKey"], "Messaging:Http:ApiKey");
 if (!usaHttp)
 {
     builder.Services.AddSingleton(builder.Configuration.GetSection("RabbitMq").Get<RabbitOptions>() ?? new RabbitOptions());
     builder.Services.AddHostedService<LancamentoConsumer>();
+    builder.Services.AddSingleton<DlqReprocessador>();
 }
 
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
+jwt.ExigirChaveSegura();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
     {
